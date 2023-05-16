@@ -1,0 +1,116 @@
+---
+title: "Shared functions and formatting"
+author: "Edward Wallace"
+date: '2023-05-16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE , warning=FALSE, message=FALSE)
+```
+
+
+```{r load_packages, echo=FALSE}
+library(tidyverse)
+library(reshape2)
+library(cowplot)
+library(extrafont)
+library(here)
+```
+
+```{r shared_formatting, echo=FALSE}
+theme_set(
+  theme_cowplot(font_size = 12, font_family = "Arial",
+                rel_large = 1) + 
+    theme(strip.background = element_blank(),
+          panel.border = 
+            element_rect(color = "grey90", 
+                         fill = NA, 
+                         linetype = 1, 
+                         size = 1),
+          panel.grid.major.y = 
+            element_line(size = 0.5, 
+                         colour = "grey90"))
+)
+
+scale_time_hrs <- 
+  scale_x_continuous(name = "Time (hours)", 
+                     breaks = c(0, 12, 24, 48, 72),
+                     limits = c(0, 72),
+                     expand = c(0, 0))
+```
+
+
+```{r platereader_functions, echo=FALSE}
+read_platereader_csv <- function(file, ...) {
+  # read plate reader data in .csv format and convert time to hours, from seconds.
+  readr::read_csv(file = file, ...) %>%
+    dplyr::mutate(Time = Time/3600)
+}
+
+read_platemap_csv <- function(file, strain_df = NULL, ...) {
+  platemap <- readr::read_csv(file = file, ...)
+  if ( !is.null(strain_df) ) {
+    platemap <- platemap %>%
+      dplyr::left_join(strain_df, by = "Strain")
+  }
+  platemap
+}
+
+reshape_annotate_rawod <- function(rawod, platemap, 
+                                   od.name = "OD595", 
+                                   melt.id = "Time", 
+                                   well.name = "Well") {
+  rawod %>%
+    # Tidy the data using the melt function from reshape2
+    reshape2::melt(id = melt.id, 
+                   variable.name = well.name,
+                   value.name =  od.name) %>%
+    # Annotate by joining with the platemap
+    inner_join(platemap, by = well.name)
+}
+
+summarise_OD_fixed <- function(annotated_od, od.name = "OD595", ...) {
+  # summarise OD fixed value across many times
+  # here use `...` input to pass conditions to filter
+  # e.g. summarise_OD_fixed(annotated_od, od.name = "OD595", is.na(Strain))
+  annotated_od %>%
+    dplyr::filter(...) %>%
+    dplyr::summarise(OD_median = median(OD595),
+                     OD_mean   = mean(OD595),
+                     OD_max    = max(OD595),
+                     OD_min    = min(OD595),
+                     .groups = "keep")
+}
+
+summarise_OD_bytime <- function(annotated_od, od.name = "OD595", groups = "Time", ...) {
+  # summarise OD at each time
+  # here use `...` input to pass conditions to filter
+  # e.g. summarise_OD_bytime(annotated_od, od.name = "OD595", groups = "Time", is.na(Strain))
+  annotated_od %>%
+    dplyr::filter(...) %>%
+    dplyr::group_by(Time) %>%
+    dplyr::summarise(OD_median_time = median(OD595),
+                     OD_mean_time   = mean(OD595),
+                     OD_max_time    = max(OD595),
+                     OD_min_time    = min(OD595),
+                     .groups = "keep")
+}
+
+normalise_OD_2ways <- function(annotatedod, ...) {
+  # normalise OD across a plate
+  # will NOT work if there are multiple media in a plate; that would require an extra group_by or filtering internally.
+  # here use `...` input to pass conditions to filter
+  # e.g. normalise_OD(annotated_od, is.na(Strain))
+  # e.g. normalise_OD(annotated_od, Well %in% c("A1","A2","A3")) 
+  
+  normvalues_fixed <- 
+    summarise_OD_fixed(annotatedod, od.name = "OD595", ...)
+  normvalues_bytime <- 
+    summarise_OD_bytime(annotatedod, od.name = "OD595", groups = "Time", ...)
+  annotatedod %>%
+    mutate(OD_corrected_fixed = OD595 - normvalues_fixed$OD_median) %>%
+    left_join(normvalues_bytime, by = "Time") %>% 
+    mutate(OD_corrected_time = OD595 - OD_median_time) 
+}
+```

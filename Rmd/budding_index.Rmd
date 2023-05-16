@@ -1,0 +1,111 @@
+---
+title: "Budding index of Gat201 strains"
+author: "Edward Wallace"
+date: "20/03/2023"
+output: html_document
+---
+
+
+## Summary 
+
+This plots the budding index (% of cells with buds) for cells with and without Gat201, in Cryptococcus wakeup conditions.
+
+Data were collected by Liz Ballou in 2023 (add details here).
+
+### Load shared functions and formatting
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+
+## Set up strain names, colours, etc.
+
+```{r nice_names}
+strain_df <- tibble( Strain = c("H99", "gat201", "C26 GAT201", "C30" ),
+                     Strain_nice = c("GAT201", "gat201∆m", "GAT201-C1", "GAT201-C2"),
+                     colour = c("grey20", "darkred", "blue3", "cyan4"))
+
+scale_color_strain <- 
+  scale_color_manual("Strain",
+                     breaks = strain_df$Strain_nice,
+                     values = strain_df$colour)
+
+Time_Media_Temp_levels <- 
+  c("0min YPD 25", 
+    "120min YPD 25", "120min YPD 37", 
+    "120min RPMI 25", "120min RPMI 37")
+
+Time_Media_Temp_labels <- 
+  c("0hr\nYPD", 
+    "2hr\nYPD\n25°C",  "2hr\nYPD\n37°C", 
+    "2hr\nRPMI\n25°C", "2hr\nRPMI\n37°C")
+```
+
+## Read in data as xlsx file
+
+```{r load_data}
+budding_data <- 
+  here::here("data","CryptoWakeup_Gat201_budding_quantification.xlsx") %>%
+  readxl::read_excel() %>%
+  dplyr::filter(!is.na("total_cells")) %>%
+  tidyr::separate(condition,into = c("Replicate", "Media", "Temperature", "Time_min"),remove = FALSE) %>%
+  dplyr::mutate(Time_Media_Temp = 
+                  paste(Time_min, Media, Temperature) %>%
+                  factor(levels = Time_Media_Temp_levels,
+                         labels = Time_Media_Temp_labels)
+                ) %>%
+  dplyr::left_join(strain_df, by = "Strain")
+
+```
+
+## Summarise budding index by sample (strain and replicate)
+
+```{r summarise_by_sample}
+budding_data_bysample <- 
+  budding_data %>%
+  group_by(Strain_nice, condition, Replicate, Time_Media_Temp) %>%
+  summarize(unbudded = sum(unbudded), 
+            budded = sum(budded),
+            total_cells = sum(total_cells),
+            budding_index = budded/total_cells * 100,
+            .groups = "keep")
+
+budding_data_bysample
+```
+
+## Plot the budding index by strain and replicate
+
+```{r plot_budding_index, fig.width = 3.75, fig.height = 2.5}
+budding_index_plot <- 
+  ggplot(data = budding_data_bysample %>%
+           dplyr::filter(!is.na(total_cells)),
+         aes(x = Time_Media_Temp, y = budding_index, colour = Strain_nice)) +
+  geom_point() +
+  stat_summary(geom = "errorbar", fun.ymax = "mean", fun.ymin = "mean") + 
+  scale_color_strain +
+  scale_y_continuous("% of cells with buds", expand = c(0,0)) +
+  coord_cartesian(clip = "off") +
+  theme(axis.title.x = element_blank())
+
+budding_index_plot
+```
+
+## Save plot to .svg and .png format
+
+```{r save_plot}
+here::here("results", "budding_index_Time_Media_Temp.png") %>%
+  ggsave(plot = budding_index_plot,
+         width = 3.75, height=2)
+```
+
+```{r save_svg}
+here::here("results", "budding_index_Time_Media_Temp.svg") %>%
+  ggsave(plot = budding_index_plot,
+         width = 3.75, height=2)
+```
+
+# Session info for reproducibility
+
+```{r session_info}
+sessionInfo()
+```
