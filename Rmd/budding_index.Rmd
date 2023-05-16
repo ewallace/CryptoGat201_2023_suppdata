@@ -2,7 +2,10 @@
 title: "Budding index of Gat201 strains"
 author: "Edward Wallace"
 date: "20/03/2023"
-output: html_document
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
 ---
 
 
@@ -81,7 +84,7 @@ budding_index_plot <-
            dplyr::filter(!is.na(total_cells)),
          aes(x = Time_Media_Temp, y = budding_index, colour = Strain_nice)) +
   geom_point() +
-  stat_summary(geom = "errorbar", fun.ymax = "mean", fun.ymin = "mean") + 
+  stat_summary(geom = "errorbar", fun.max = "mean", fun.min = "mean") + 
   scale_color_strain +
   scale_y_continuous("% of cells with buds", expand = c(0,0)) +
   coord_cartesian(clip = "off") +
