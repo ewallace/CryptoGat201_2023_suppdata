@@ -76,7 +76,7 @@ To find how stable the ODs of the blank wells are.
 ggplot(data=filter(annotated_RPMI, is.na(Strain)),
        aes(x=Time, y=OD595,  group = Well)) + 
   geom_line() + 
-  scale_time_hrs + 
+  scale_time_hrs() + 
   scale_y_continuous(limits = c(0, 0.2),
                      expand = c(0, 0),
                      breaks = c(0, 0.05, 0.1, 0.15)) +
@@ -121,7 +121,7 @@ RPMI_plot <- ggplot(data = normalisedOD_RPMI %>%
                     aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
   geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
   stat_summary(fun = "median", geom = "line", size = 1) +
-  scale_time_hrs + 
+  scale_time_hrs() + 
   # scale_y_continuous(limits = c(0, 0.9), 
   #                    expand = c(0, 0), 
   #                    breaks = c(0, 0.25, 0.5, 0.75)) +
@@ -140,8 +140,30 @@ RPMI_plot
 here::here("results",
            "20200728_EH_PR2_RPMI_WT_Gat201_summaryplot.png") %>%
   ggsave(plot = RPMI_plot,
-         width = 5.1, height = 5)
+         width = 5.1, height = 3.75)
 ```
+
+## Plot OD corrected by time-based median summary RPMI
+
+```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
+RPMI_spline_plot <- ggplot(data = normalisedOD_RPMI %>%
+                      filter(!is.na(Strain)), 
+                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
+  ggformula::stat_spline(linewidth = 1) + 
+  scale_time_hrs() + 
+  # scale_y_continuous(limits = c(0, 0.9), 
+  #                    expand = c(0, 0), 
+  #                    breaks = c(0, 0.25, 0.5, 0.75)) +
+  scale_y_continuous(limits = c(0, 0.1),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1)) +
+  labs(y = "OD595",
+       title = "RPMI") +
+  scale_color_strain
+
+RPMI_spline_plot
+```
+
 
 # YPD media analysis
 
@@ -182,7 +204,7 @@ To find how stable the ODs of the blank wells are.
 ggplot(data=filter(annotated_YPD, is.na(Strain)),
            aes(x=Time, y=OD595,  group = Well)) + 
   geom_line() + 
-  scale_time_hrs + 
+  scale_time_hrs() + 
   scale_y_continuous(limits = c(0, 0.2),
                      expand = c(0, 0),
                      breaks = c(0, 0.05, 0.1, 0.15)) +
@@ -221,7 +243,7 @@ YPD_plot <- ggplot(data = normalisedOD_YPD %>%
                     aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
   geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
   stat_summary(fun = "median", geom = "line", size = 1) +
-  scale_time_hrs + 
+  scale_time_hrs() + 
   scale_y_continuous(limits = c(0, 0.9),
                      expand = c(0, 0),
                      breaks = c(0, 0.1, 0.25, 0.5, 0.75)) +
@@ -240,10 +262,29 @@ YPD_plot
 here::here("results",
            "20200807_EH_PR4_YPD_WT_Gat201_summaryplot.png") %>%
   ggsave(plot = YPD_plot,
-         width = 5.1, height = 5)
+         width = 5.1, height = 3.75)
 ```
 
+## Plot OD corrected by time-based median summary spline smooth YPD
 
+```{r plot_all_stat_spline_YPD, fig.width = 5, fig.height = 3.5}
+YPD_spline_plot <- ggplot(data = normalisedOD_YPD %>%
+                      filter(!is.na(Strain)), 
+                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
+  ggformula::stat_spline(linewidth = 1) + 
+  scale_time_hrs() + 
+  scale_y_continuous(limits = c(0, 0.9),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.1, 0.25, 0.5, 0.75)) +
+  # scale_y_continuous(limits = c(0, 0.1),
+  #                    expand = c(0, 0),
+  #                    breaks = c(0, 0.05, 0.1)) +
+  labs(y = "OD595",
+       title = "YPD") +
+  scale_color_strain
+
+YPD_spline_plot
+```
 
 # Multipanel Figure combining RPMI and YPD results
 
