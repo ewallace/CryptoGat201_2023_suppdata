@@ -291,8 +291,8 @@ YPD_spline_plot
 ```{r multifig, fig.height = 4, fig.width = 3.75}
 multi_plot <- 
   plot_grid(
-    RPMI_plot,
-    YPD_plot,
+    RPMI_spline_plot,
+    YPD_spline_plot,
     ncol = 1)
 
 multi_plot
