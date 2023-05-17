@@ -43,13 +43,9 @@ scale_color_strain <-
 ## Read in transposed data as csv file
 
 ```{r load_rawod}
-# rawod <- 
-#   here::here("data", "20200728_EH_PR2_WT_Gat201.xlsx") %>%
-#   read_platereader_xlsx(start_row = 52)
-
-rawod <- 
-  here::here("data", "20230308_RPMI_Gat201Targets_Plate1_csv.csv") %>%
-  read_platereader_csv()
+rawod <-
+  here::here("data", "20230308_RPMI_Gat201Targets_Plate1.xlsx") %>%
+  read_platereader_xlsx(start_row = 52)
 ```
 
 ## Read in the Plate map data from csv file

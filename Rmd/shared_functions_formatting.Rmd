@@ -56,14 +56,14 @@ read_platereader_csv <- function(file, ...) {
     dplyr::mutate(Time = Time/3600)
 }
 
-read_platereader_xlsx <- function(file, start_row = 12, end_row = start_row + 98) {
+read_platereader_xlsx <- function(file, start_row = 52, end_row = start_row + 98) {
   # read TECAN plate reader data in raw .xlsx format
   # transpose the data into a tidy tibble format
   # convert time to hours, from seconds
   # 
   # 
-  #   start_row: the row that begins "Cycle Nr."
-  #   end_row: be the last row of data, start_row + 98 for 96-well plate
+  #   start_row: the row that begins "Cycle Nr." Default 52 because that's true for the experimental design we used here
+  #   end_row: the last row of data, start_row + 98 for 96-well plate
   #
   
   
