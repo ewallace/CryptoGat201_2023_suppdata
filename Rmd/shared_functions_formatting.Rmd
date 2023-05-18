@@ -101,7 +101,8 @@ reshape_annotate_raw_od <-
                      variable.name = well.name,
                      value.name =  od.name) %>%
       # Annotate by joining with the platemap
-      inner_join(platemap, by = well.name)
+      inner_join(platemap, by = well.name) %>%
+      as_tibble()
   }
 
 summarise_od_fixed <- function(annotated_od, od.name = "OD595", ...) {
@@ -165,7 +166,7 @@ load_annotate_platereader <-
       read_platemap_csv(strain_df = strain_df)
     
     reshape_annotate_raw_od(raw_od = raw_od, 
-                           platemap = platemap)
+                            platemap = platemap)
   }
 ```
 

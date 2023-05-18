@@ -71,7 +71,7 @@ To find how stable the ODs of the blank wells are.
 
 ```{r plot_blank_ODs, fig.width = 5, fig.height = 4}
 ggplot_growthcurve(data_od=filter(annotated_od, is.na(Strain)),
-                   limits_time = c(0,48),
+                   limits_time = c(0, 48),
                    limits_od = c(0, 0.2),
                    breaks_od = c(0, 0.05, 0.1, 0.15)) + 
   geom_line(aes(group = Well)) + 
@@ -79,6 +79,16 @@ ggplot_growthcurve(data_od=filter(annotated_od, is.na(Strain)),
 ```
 
 This shows that the OD increases over time, presumably pH change of the phenol red indicator. We correct for this.
+
+## Plot raw ODs of all wells
+
+```{r plot_all_wells, fig.width = 5, fig.height = 4}
+ggplot_growthcurve(data_od = annotated_od,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+```
 
 ## Calculate median OD for blank wells
 
@@ -107,49 +117,49 @@ normalised_od <-
 ## Plot OD corrected by time-based median summary
 
 ```{r plot_all_stat_summary, fig.width = 5, fig.height = 3.75}
-plot_plate1 <- 
+plot_plate_1 <- 
   ggplot_growthcurve_spline_pluswells(data_od = normalised_od %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_time",
-                             limits_time = c(0,48),
-                             limits_od = c(0,0.12)) +
+                             limits_time = c(0, 48),
+                             limits_od = c(0, 0.11)) +
   scale_color_strain(strain_df_1)
 
-plot_plate1
+plot_plate_1
 ```
 
 
 ```{r save_png_summary}
 here::here("results",
            "20230308_RPMI_Gat201Targets_Plate1_summaryplot.png") %>%
-  ggsave(plot = plot_plate1,
+  ggsave(plot = plot_plate_1,
          width = 5, height = 3.75)
 ```
 
 ## Plot OD corrected by time-based median summary, smoothed
 
 ```{r plot_all_stat_spline, fig.width = 5, fig.height = 3.75}
-plot_plate1_spline <- 
+plot_plate_1_spline <- 
   ggplot_growthcurve_spline(data_od = normalised_od %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
-                            limits_time = c(0,48)) +
+                            limits_time = c(0, 48)) +
   scale_color_strain(strain_df_1) 
 
-plot_plate1_spline
+plot_plate_1_spline
 ```
 
 ```{r save_png_spline}
 here::here("results",
            "20230308_RPMI_Gat201Targets_Plate1_splineplot.png") %>%
-  ggsave(plot = plot_plate1_spline,
+  ggsave(plot = plot_plate_1_spline,
          width = 5, height = 3.75)
 ```
 
 
-# Plate 2
+# Plate 2: WT, gat201∆, ecm2201∆, mep1∆, pdr802∆
 
-```{r load_plate_2}
+```{r load_plate_2, fig.width = 5, fig.height = 3.75}
 strain_df_2 <- tibble( 
                     Strain = c("KN99 (WT)", "GAT201", "ECM2201", "MEP1", "PDR802"),
                     Strain_nice =  c("WT", "gat201∆", "ecm2201∆", "mep1∆", "pdr802∆"),
@@ -159,29 +169,224 @@ platemap_2 <-
   here::here("data", "20230310_RPMI_Gat201Targets_Plate2_setup.csv") %>%
   read_platemap_csv() 
 
-normalised_od_2 <- 
+annotated_od_2 <- 
   load_annotate_platereader(
     file_raw_od = "20230310_RPMI_Gat201Targets_Plate2.xlsx", 
     file_platemap = "20230310_RPMI_Gat201Targets_Plate2_setup.csv", 
-    strain_df = strain_df_2,
-  ) %>%
+    strain_df = strain_df_2)
+
+ggplot_growthcurve(data_od = annotated_od_2,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+
+normalised_od_2 <- annotated_od_2 %>%
   normalise_od_2ways(is.na(Strain))
 
 ```
+
+
 ## Plot OD corrected by time-based median summary
 
-```{r plot_plate2_stat_summary, fig.width = 5, fig.height = 3.75}
-plot_plate2 <- 
+```{r plot_plate_2_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_2 <- 
   ggplot_growthcurve_spline_pluswells(data_od = normalised_od_2 %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_time",
-                             limits_time = c(0,48),
-                             limits_od   = c(0,0.12)) +
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
   scale_color_strain(strain_df_2)
 
-plot_plate2
+plot_plate_2
 ```
 
+
+# Plate 3: WT, gat201∆, CNAG_04874, hxt1∆, fcy2∆
+
+Note, [CNAG_04874](https://fungidb.org/fungidb/app/record/gene/CNAG_04874) is homologous to [*S. pombe* Crr1](https://www.pombase.org/gene/SPBC21B10.07).
+
+```{r load_plate_3, fig.width = 5, fig.height = 3.75}
+strain_df_3 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "CNAG_04874", "HXT1", "FCY2"),
+                    Strain_nice =  c("WT", "gat201∆", "cnag_04874∆", "hxt1∆", "fcy2∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+
+platemap_3 <- 
+  here::here("data", "20230321_RPMI_Gat201Targets_Plate3_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_3 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230321_RPMI_Gat201Targets_Plate3.xlsx", 
+    file_platemap = "20230321_RPMI_Gat201Targets_Plate3_setup.csv", 
+    strain_df = strain_df_3)
+
+ggplot_growthcurve(data_od = annotated_od_3,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+normalised_od_3 <- annotated_od_3 %>%
+  normalise_od_2ways(is.na(Strain))
+
+```
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_3_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_3 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_3 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_3)
+
+plot_plate_3
+```
+
+# Plate 4: WT, gat201∆, blp2∆, blp4∆, cfo1∆
+
+```{r load_plate_4, fig.width = 5, fig.height = 3.75}
+strain_df_4 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "BLP2", "BLP4", "CFO1"),
+                    Strain_nice =  c("WT", "gat201∆", "blp2∆", "blp4∆", "cfo1∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+
+platemap_4 <- 
+  here::here("data", "20230321_RPMI_Gat201Targets_Plate4_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_4 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230321_RPMI_Gat201Targets_Plate4.xlsx", 
+    file_platemap = "20230321_RPMI_Gat201Targets_Plate4_setup.csv", 
+    strain_df = strain_df_4)
+
+ggplot_growthcurve(data_od = annotated_od_4,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+
+normalised_od_4 <- annotated_od_4 %>%
+  normalise_od_2ways(is.na(Strain))
+
+```
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_4_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_4 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_4 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_4)
+
+plot_plate_4
+```
+
+# Plate 5: WT, gat201∆, ccp1∆, cas3∆, isp6∆, cnag_05458∆
+
+This plate included a double-copy GAT201 strain not relevant for the current figure.
+
+```{r load_plate_5, fig.width = 5, fig.height = 3.75}
+strain_df_5 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "CAS3", "CCP1", "ISP6", "CNAG_05458", "P2.7ZH (dbl GAT201)"),
+                    Strain_nice =  c("WT", "gat201∆", "cas3∆", "ccp1∆", "isp6∆", "cnag_05458∆", "dbl_GAT201"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3", "blue", "goldenrod"))
+
+platemap_5 <- 
+  here::here("data", "20230329_RPMI_Gat201Targets_Plate5_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_5 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230329_RPMI_Gat201Targets_Plate5.xlsx", 
+    file_platemap = "20230329_RPMI_Gat201Targets_Plate5_setup.csv", 
+    strain_df = strain_df_5)
+
+ggplot_growthcurve(data_od = annotated_od_5,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.25),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+
+normalised_od_5 <- annotated_od_5 %>%
+  normalise_od_2ways(is.na(Strain)) %>%
+  dplyr::filter(! Strain_nice == "dbl_GAT201")
+
+```
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_5_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_5 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_5 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_5)
+
+plot_plate_5
+```
+
+# Plate 6: WT, gat201∆, gat201∆, ada2∆, cft1∆, cpl1∆, scw1∆
+
+This plate also included a double-copy GAT201 strain not relevant for the current figure.
+
+```{r load_plate_6, fig.width = 5, fig.height = 3.75}
+strain_df_6 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "ADA2", "CFT1", "CPL1", "SCW1", "P2.28EH (dbl GAT201)"),
+                    Strain_nice =  c("WT", "gat201∆", "ada2∆", "cft1∆", "cpl1∆", "scw1∆", "dbl_GAT201"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3", "blue", "goldenrod"))
+
+platemap_6 <- 
+  here::here("data", "20230329_RPMI_Gat201Targets_Plate6_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_6 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230329_RPMI_Gat201Targets_Plate6.xlsx", 
+    file_platemap = "20230329_RPMI_Gat201Targets_Plate6_setup.csv", 
+    strain_df = strain_df_6)
+
+ggplot_growthcurve(data_od = annotated_od_6,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.25),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+
+normalised_od_6 <- annotated_od_6 %>%
+  normalise_od_2ways(is.na(Strain)) %>%
+  dplyr::filter(! Strain_nice == "dbl_GAT201")
+
+```
+
+In this plate the OD of many blank wells is higher than OD of wells with cells. That should not be happening. I'm going to save these plots, then move forward making a composite figure without them.
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_6_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_6 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_6 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_6)
+
+plot_plate_6
+```
 
 
 # Session info for reproducibility
