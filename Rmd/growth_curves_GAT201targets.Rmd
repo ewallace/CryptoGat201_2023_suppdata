@@ -1,0 +1,296 @@
+---
+title: "Plate reader growth curves of GAT201 targets in RPMI"
+author: "Liz Hughes & Edward Wallace"
+date: "16/05/2023"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Summary
+
+Plate reader growth curves of GAT201 targets, March 2023
+
+# Plate 1, 20230308, for main panel figure
+
+Design:
+
+- WT KN99-alpha, gat201∆, gat204∆, liv3∆, blp1∆, all from Madhani deletion collection
+- 4 Biological replicates, 3 Technical replicates each.
+- Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
+- Seed at OD 600nm = 0.2 , 200 ul per well.
+- Grow in RPMI at 37 degrees C.
+- Run for 2 days (283 cycles).
+
+
+# Set up data frame of nice strain names, colours, styles.
+
+```{r strain_df_1}
+strain_df_1 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "GAT204", "LIV3", "BLP1"),
+                    Strain_nice =  c("WT", "gat201∆", "gat204∆", "liv3∆", "blp1∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+```
+
+
+## Read in transposed data as csv file
+
+```{r load_raw_od}
+raw_od <-
+  here::here("data", "20230308_RPMI_Gat201Targets_Plate1.xlsx") %>%
+  read_platereader_xlsx(start_row = 52)
+```
+
+## Read in the Plate map data from csv file
+
+Also combine with nice strain names for display.
+
+```{r load_platemap}
+platemap <- 
+  here::here("data", "20230308_RPMI_Gat201Targets_Plate1_setup.csv") %>%
+  read_platemap_csv(strain_df = strain_df_1) 
+
+head(platemap, n=10)
+
+```
+
+## Reshape data and combine with the plate map, pairing them by Well
+
+```{r reshape_annotate}
+annotated_od <- 
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+```
+
+## Plot blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs, fig.width = 5, fig.height = 4}
+ggplot_growthcurve(data_od=filter(annotated_od, is.na(Strain)),
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.2),
+                   breaks_od = c(0, 0.05, 0.1, 0.15)) + 
+  geom_line(aes(group = Well)) + 
+  labs(title = "Blank wells RPMI")
+```
+
+This shows that the OD increases over time, presumably pH change of the phenol red indicator. We correct for this.
+
+## Plot raw ODs of all wells
+
+```{r plot_all_wells, fig.width = 5, fig.height = 4}
+ggplot_growthcurve(data_od = annotated_od,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+```
+
+## Calculate median OD for blank wells
+
+```{r calc_blank_medians}
+# filter out columns 1 and 12 as well?
+blank_od_summary <- 
+  summarise_od_fixed(annotated_od, od.name = "OD595",
+                     is.na(Strain)) 
+
+print(blank_od_summary)
+
+blank_od_time <- 
+  summarise_od_bytime(annotated_od, od.name = "OD595",
+                     is.na(Strain)) 
+
+print(blank_od_time)
+```
+
+## Subtract blank OD to make corrected OD
+
+```{r subtract_blank_OD}
+normalised_od <- 
+  normalise_od_2ways(annotated_od, is.na(Strain))
+```
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_all_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_1 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od = c(0, 0.11)) +
+  scale_color_strain(strain_df_1)
+
+plot_plate_1
+```
+
+
+```{r save_png_summary}
+here::here("results",
+           "20230308_RPMI_Gat201Targets_Plate1_summaryplot.png") %>%
+  ggsave(plot = plot_plate_1,
+         width = 5, height = 3.75)
+```
+
+## Plot OD corrected by time-based median summary, smoothed
+
+```{r plot_all_stat_spline, fig.width = 5, fig.height = 3.75}
+plot_plate_1_spline <- 
+  ggplot_growthcurve_spline(data_od = normalised_od %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0, 48)) +
+  scale_color_strain(strain_df_1) 
+
+plot_plate_1_spline
+```
+
+```{r save_png_spline}
+here::here("results",
+           "20230308_RPMI_Gat201Targets_Plate1_splineplot.png") %>%
+  ggsave(plot = plot_plate_1_spline,
+         width = 5, height = 3.75)
+```
+
+
+# Plate 2: WT, gat201∆, ecm2201∆, mep1∆, pdr802∆
+
+```{r load_plate_2, fig.width = 5, fig.height = 3.75}
+strain_df_2 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "ECM2201", "MEP1", "PDR802"),
+                    Strain_nice =  c("WT", "gat201∆", "ecm2201∆", "mep1∆", "pdr802∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+
+platemap_2 <- 
+  here::here("data", "20230310_RPMI_Gat201Targets_Plate2_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_2 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230310_RPMI_Gat201Targets_Plate2.xlsx", 
+    file_platemap = "20230310_RPMI_Gat201Targets_Plate2_setup.csv", 
+    strain_df = strain_df_2)
+
+ggplot_growthcurve(data_od = annotated_od_2,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+
+normalised_od_2 <- annotated_od_2 %>%
+  normalise_od_2ways(is.na(Strain))
+
+```
+
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_2_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_2 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_2 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_2)
+
+plot_plate_2
+```
+
+
+# Plate 3: WT, gat201∆, CNAG_04874, hxt1∆, fcy2∆
+
+Note, [CNAG_04874](https://fungidb.org/fungidb/app/record/gene/CNAG_04874) is homologous to [*S. pombe* Crr1](https://www.pombase.org/gene/SPBC21B10.07).
+
+```{r load_plate_3, fig.width = 5, fig.height = 3.75}
+strain_df_3 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "CNAG_04874", "HXT1", "FCY2"),
+                    Strain_nice =  c("WT", "gat201∆", "cnag_04874∆", "hxt1∆", "fcy2∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+
+platemap_3 <- 
+  here::here("data", "20230321_RPMI_Gat201Targets_Plate3_setup.csv") %>%
+  read_platemap_csv() 
+
+annotated_od_3 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230321_RPMI_Gat201Targets_Plate3.xlsx", 
+    file_platemap = "20230321_RPMI_Gat201Targets_Plate3_setup.csv", 
+    strain_df = strain_df_3)
+
+ggplot_growthcurve(data_od = annotated_od_3,
+                   limits_time = c(0, 48),
+                   limits_od = c(0, 0.3),
+                   breaks_od = c(0, 0.05, 0.1, 0.15, 0.2, 0.25)) +
+  geom_line(aes(group = Well, colour = Strain))
+
+normalised_od_3 <- annotated_od_3 %>%
+  normalise_od_2ways(is.na(Strain))
+
+```
+
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate_3_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate_3 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_3 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0, 48),
+                             limits_od   = c(0, 0.11)) +
+  scale_color_strain(strain_df_3)
+
+plot_plate_3
+```
+
+
+# Summary figure Plates 1-3 (Supplementary Figure S11)
+
+```{r plot_plates123, fig.width = 5, fig.height = 7.5}
+plot_plates_123 <-
+  plot_grid(plot_plate_1,
+            plot_plate_2,
+            plot_plate_3,
+            align = "v",
+            ncol = 1,
+            labels = "AUTO")
+
+plot_plates_123
+```
+
+```{r save_png_summary_plate123}
+here::here("results",
+           "fig_growthcurves_Gat201Targets_RPMI_summary.png") %>%
+  ggsave(plot = plot_plates_123,
+         width = 5, height = 7.5)
+```
+
+# Session info for reproducibility
+
+```{r session_info}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
