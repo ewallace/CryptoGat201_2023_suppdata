@@ -465,6 +465,14 @@ ggplot_growthcurve_spline &lt;- function(...) {
   ggplot_growthcurve(...) + 
   ggformula::stat_spline(aes(color = Strain_nice),
                          linewidth = 1) 
+}
+
+ggplot_growthcurve_spline_pluswells &lt;- function(...) {
+  ggplot_growthcurve(...) + 
+  geom_line(aes(group = Well, color = Strain_nice), 
+            size = 0.2, alpha = 0.2) + 
+  ggformula::stat_spline(aes(color = Strain_nice),
+                         linewidth = 1) 
 }</code></pre>
 <div id="summary" class="section level1">
 <h1>Summary</h1>
@@ -543,20 +551,20 @@ the phenol red indicator. We correct for this.</p>
 <h2>Calculate median OD for blank wells RPMI</h2>
 <p>Remove well H2 that had a strange reading above.</p>
 <pre class="r"><code># filter out columns 1 and 12 as well?
-blank_OD_summary_RPMI &lt;- 
-  summarise_OD_fixed(annotated_od_RPMI, od.name = &quot;OD595&quot;,
+blank_od_summary_RPMI &lt;- 
+  summarise_od_fixed(annotated_od_RPMI, od.name = &quot;OD595&quot;,
                      is.na(Strain),
                      Well != &quot;H2&quot;) 
 
-print(blank_OD_summary_RPMI)</code></pre>
+print(blank_od_summary_RPMI)</code></pre>
 <pre><code>##   OD_median   OD_mean OD_max OD_min
 ## 1    0.1488 0.1471181 0.1592 0.1004</code></pre>
-<pre class="r"><code>blank_OD_time_RPMI &lt;- 
-  summarise_OD_bytime(annotated_od_RPMI, od.name = &quot;OD595&quot;,
+<pre class="r"><code>blank_od_time_RPMI &lt;- 
+  summarise_od_bytime(annotated_od_RPMI, od.name = &quot;OD595&quot;,
                      is.na(Strain),
                      Well != &quot;H2&quot;) 
 
-print(blank_OD_time_RPMI)</code></pre>
+print(blank_od_time_RPMI)</code></pre>
 <pre><code>## # A tibble: 435 × 5
 ## # Groups:   Time [435]
 ##     Time OD_median_time OD_mean_time OD_max_time OD_min_time
@@ -575,13 +583,13 @@ print(blank_OD_time_RPMI)</code></pre>
 </div>
 <div id="subtract-blank-od-to-make-corrected-od-rpmi" class="section level2">
 <h2>Subtract blank OD to make corrected OD RPMI</h2>
-<pre class="r"><code>normalisedOD_RPMI &lt;- 
-  normalise_OD_2ways(annotated_od_RPMI, is.na(Strain))</code></pre>
+<pre class="r"><code>normalised_od_RPMI &lt;- 
+  normalise_od_2ways(annotated_od_RPMI, is.na(Strain))</code></pre>
 </div>
 <div id="plot-od-corrected-by-time-based-median-summary-rpmi" class="section level2">
 <h2>Plot OD corrected by time-based median summary RPMI</h2>
 <pre class="r"><code>RPMI_plot &lt;- 
-  ggplot_growthcurve_summary(data_od = normalisedOD_RPMI %&gt;%
+  ggplot_growthcurve_summary(data_od = normalised_od_RPMI %&gt;%
                                filter(!is.na(Strain)),
                              value_od = &quot;OD_corrected_time&quot;,
                              limits_time = c(0,72),
@@ -600,7 +608,7 @@ RPMI_plot</code></pre>
 <div id="plot-od-corrected-by-time-based-median-summary-rpmi-1" class="section level2">
 <h2>Plot OD corrected by time-based median summary RPMI</h2>
 <pre class="r"><code>RPMI_spline_plot &lt;- 
-  ggplot_growthcurve_spline(data_od = normalisedOD_RPMI %&gt;%
+  ggplot_growthcurve_spline(data_od = normalised_od_RPMI %&gt;%
                               filter(!is.na(Strain)),
                             value_od = &quot;OD_corrected_time&quot;,
                             limits_time = c(0,72),
@@ -665,18 +673,18 @@ YPD</h2>
 <div id="calculate-median-od-for-blank-wells-for-ypd" class="section level2">
 <h2>Calculate median OD for blank wells for YPD</h2>
 <pre class="r"><code># filter out columns 1 and 12 as well?
-blank_OD_summary_YPD &lt;- 
-  summarise_OD_fixed(annotated_od_YPD, od.name = &quot;OD595&quot;,
+blank_od_summary_YPD &lt;- 
+  summarise_od_fixed(annotated_od_YPD, od.name = &quot;OD595&quot;,
                      is.na(Strain)) 
 
-print(blank_OD_summary_YPD)</code></pre>
+print(blank_od_summary_YPD)</code></pre>
 <pre><code>##   OD_median  OD_mean OD_max OD_min
 ## 1    0.1721 0.172279 0.1875 0.1625</code></pre>
-<pre class="r"><code>blank_OD_time_YPD &lt;- 
-  summarise_OD_bytime(annotated_od_YPD, od.name = &quot;OD595&quot;,
+<pre class="r"><code>blank_od_time_YPD &lt;- 
+  summarise_od_bytime(annotated_od_YPD, od.name = &quot;OD595&quot;,
                      is.na(Strain)) 
 
-print(blank_OD_time_YPD)</code></pre>
+print(blank_od_time_YPD)</code></pre>
 <pre><code>## # A tibble: 430 × 5
 ## # Groups:   Time [430]
 ##     Time OD_median_time OD_mean_time OD_max_time OD_min_time
@@ -695,13 +703,13 @@ print(blank_OD_time_YPD)</code></pre>
 </div>
 <div id="subtract-blank-od-to-make-corrected-od-ypd" class="section level2">
 <h2>Subtract blank OD to make corrected OD YPD</h2>
-<pre class="r"><code>normalisedOD_YPD &lt;- 
-  normalise_OD_2ways(annotated_od_YPD, is.na(Strain))</code></pre>
+<pre class="r"><code>normalised_od_YPD &lt;- 
+  normalise_od_2ways(annotated_od_YPD, is.na(Strain))</code></pre>
 </div>
 <div id="plot-od-corrected-by-time-based-median-summary-ypd" class="section level2">
 <h2>Plot OD corrected by time-based median summary YPD</h2>
 <pre class="r"><code>YPD_plot  &lt;- 
-  ggplot_growthcurve_summary(data_od = normalisedOD_YPD %&gt;%
+  ggplot_growthcurve_summary(data_od = normalised_od_YPD %&gt;%
                                filter(!is.na(Strain)),
                              value_od = &quot;OD_corrected_time&quot;,
                              limits_time = c(0,72),
@@ -721,7 +729,7 @@ YPD_plot</code></pre>
 <h2>Plot OD corrected by time-based median summary spline smooth
 YPD</h2>
 <pre class="r"><code>YPD_spline_plot &lt;- 
-  ggplot_growthcurve_spline(data_od = normalisedOD_YPD %&gt;%
+  ggplot_growthcurve_spline(data_od = normalised_od_YPD %&gt;%
                               filter(!is.na(Strain)),
                             value_od = &quot;OD_corrected_time&quot;,
                             limits_time = c(0,72),

@@ -13,7 +13,9 @@ output:
 
 # Summary
 
-Plate reader growth curves of GAT201 targets 20230308
+Plate reader growth curves of GAT201 targets, March 2023
+
+# Plate 1, 20230308, for main panel figure
 
 Design:
 
@@ -27,7 +29,7 @@ Design:
 
 # Set up data frame of nice strain names, colours, styles.
 
-```{r strain_df}
+```{r strain_df_1}
 strain_df_1 <- tibble( 
                     Strain = c("KN99 (WT)", "GAT201", "GAT204", "LIV3", "BLP1"),
                     Strain_nice =  c("WT", "gat201∆", "gat204∆", "liv3∆", "blp1∆"),
@@ -82,34 +84,35 @@ This shows that the OD increases over time, presumably pH change of the phenol r
 
 ```{r calc_blank_medians}
 # filter out columns 1 and 12 as well?
-blank_OD_summary <- 
-  summarise_OD_fixed(annotated_od, od.name = "OD595",
+blank_od_summary <- 
+  summarise_od_fixed(annotated_od, od.name = "OD595",
                      is.na(Strain)) 
 
-print(blank_OD_summary)
+print(blank_od_summary)
 
-blank_OD_time <- 
-  summarise_OD_bytime(annotated_od, od.name = "OD595",
+blank_od_time <- 
+  summarise_od_bytime(annotated_od, od.name = "OD595",
                      is.na(Strain)) 
 
-print(blank_OD_time)
+print(blank_od_time)
 ```
 
 ## Subtract blank OD to make corrected OD
 
 ```{r subtract_blank_OD}
-normalisedOD <- 
-  normalise_OD_2ways(annotated_od, is.na(Strain))
+normalised_od <- 
+  normalise_od_2ways(annotated_od, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary
 
 ```{r plot_all_stat_summary, fig.width = 5, fig.height = 3.75}
 plot_plate1 <- 
-  ggplot_growthcurve_summary(data_od = normalisedOD %>%
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_time",
-                             limits_time = c(0,48)) +
+                             limits_time = c(0,48),
+                             limits_od = c(0,0.12)) +
   scale_color_strain(strain_df_1)
 
 plot_plate1
@@ -127,7 +130,7 @@ here::here("results",
 
 ```{r plot_all_stat_spline, fig.width = 5, fig.height = 3.75}
 plot_plate1_spline <- 
-  ggplot_growthcurve_spline(data_od = normalisedOD %>%
+  ggplot_growthcurve_spline(data_od = normalised_od %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
                             limits_time = c(0,48)) +
@@ -142,6 +145,44 @@ here::here("results",
   ggsave(plot = plot_plate1_spline,
          width = 5, height = 3.75)
 ```
+
+
+# Plate 2
+
+```{r load_plate_2}
+strain_df_2 <- tibble( 
+                    Strain = c("KN99 (WT)", "GAT201", "ECM2201", "MEP1", "PDR802"),
+                    Strain_nice =  c("WT", "gat201∆", "ecm2201∆", "mep1∆", "pdr802∆"),
+                    colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
+
+platemap_2 <- 
+  here::here("data", "20230310_RPMI_Gat201Targets_Plate2_setup.csv") %>%
+  read_platemap_csv() 
+
+normalised_od_2 <- 
+  load_annotate_platereader(
+    file_raw_od = "20230310_RPMI_Gat201Targets_Plate2.xlsx", 
+    file_platemap = "20230310_RPMI_Gat201Targets_Plate2_setup.csv", 
+    strain_df = strain_df_2,
+  ) %>%
+  normalise_od_2ways(is.na(Strain))
+
+```
+## Plot OD corrected by time-based median summary
+
+```{r plot_plate2_stat_summary, fig.width = 5, fig.height = 3.75}
+plot_plate2 <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_2 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,48),
+                             limits_od   = c(0,0.12)) +
+  scale_color_strain(strain_df_2)
+
+plot_plate2
+```
+
+
 
 # Session info for reproducibility
 

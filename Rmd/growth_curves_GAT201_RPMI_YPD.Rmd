@@ -87,33 +87,33 @@ Remove well H2 that had a strange reading above.
 
 ```{r calc_blank_medians_RPMI}
 # filter out columns 1 and 12 as well?
-blank_OD_summary_RPMI <- 
-  summarise_OD_fixed(annotated_od_RPMI, od.name = "OD595",
+blank_od_summary_RPMI <- 
+  summarise_od_fixed(annotated_od_RPMI, od.name = "OD595",
                      is.na(Strain),
                      Well != "H2") 
 
-print(blank_OD_summary_RPMI)
+print(blank_od_summary_RPMI)
 
-blank_OD_time_RPMI <- 
-  summarise_OD_bytime(annotated_od_RPMI, od.name = "OD595",
+blank_od_time_RPMI <- 
+  summarise_od_bytime(annotated_od_RPMI, od.name = "OD595",
                      is.na(Strain),
                      Well != "H2") 
 
-print(blank_OD_time_RPMI)
+print(blank_od_time_RPMI)
 ```
 
 ## Subtract blank OD to make corrected OD RPMI
 
 ```{r subtract_blank_OD_RPMI}
-normalisedOD_RPMI <- 
-  normalise_OD_2ways(annotated_od_RPMI, is.na(Strain))
+normalised_od_RPMI <- 
+  normalise_od_2ways(annotated_od_RPMI, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary RPMI
 
 ```{r plot_all_stat_summary_RPMI, fig.width = 5, fig.height = 4}
 RPMI_plot <- 
-  ggplot_growthcurve_summary(data_od = normalisedOD_RPMI %>%
+  ggplot_growthcurve_summary(data_od = normalised_od_RPMI %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_time",
                              limits_time = c(0,72),
@@ -137,7 +137,7 @@ here::here("results",
 
 ```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
 RPMI_spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalisedOD_RPMI %>%
+  ggplot_growthcurve_spline(data_od = normalised_od_RPMI %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
                             limits_time = c(0,72),
@@ -200,31 +200,31 @@ ggplot(data=filter(annotated_od_YPD, is.na(Strain)),
 
 ```{r calc_blank_medians_YPD}
 # filter out columns 1 and 12 as well?
-blank_OD_summary_YPD <- 
-  summarise_OD_fixed(annotated_od_YPD, od.name = "OD595",
+blank_od_summary_YPD <- 
+  summarise_od_fixed(annotated_od_YPD, od.name = "OD595",
                      is.na(Strain)) 
 
-print(blank_OD_summary_YPD)
+print(blank_od_summary_YPD)
 
-blank_OD_time_YPD <- 
-  summarise_OD_bytime(annotated_od_YPD, od.name = "OD595",
+blank_od_time_YPD <- 
+  summarise_od_bytime(annotated_od_YPD, od.name = "OD595",
                      is.na(Strain)) 
 
-print(blank_OD_time_YPD)
+print(blank_od_time_YPD)
 ```
 
 ## Subtract blank OD to make corrected OD YPD
 
 ```{r subtract_blank_OD_YPD}
-normalisedOD_YPD <- 
-  normalise_OD_2ways(annotated_od_YPD, is.na(Strain))
+normalised_od_YPD <- 
+  normalise_od_2ways(annotated_od_YPD, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary YPD
 
 ```{r plot_all_stat_summary_YPD, fig.width = 5, fig.height = 3.5}
 YPD_plot  <- 
-  ggplot_growthcurve_summary(data_od = normalisedOD_YPD %>%
+  ggplot_growthcurve_summary(data_od = normalised_od_YPD %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_time",
                              limits_time = c(0,72),
@@ -248,7 +248,7 @@ here::here("results",
 
 ```{r plot_all_stat_spline_YPD, fig.width = 5, fig.height = 3.5}
 YPD_spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalisedOD_YPD %>%
+  ggplot_growthcurve_spline(data_od = normalised_od_YPD %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
                             limits_time = c(0,72),

@@ -104,10 +104,10 @@ reshape_annotate_raw_od <-
       inner_join(platemap, by = well.name)
   }
 
-summarise_OD_fixed <- function(annotated_od, od.name = "OD595", ...) {
+summarise_od_fixed <- function(annotated_od, od.name = "OD595", ...) {
   # summarise OD fixed value across many times
   # here use `...` input to pass conditions to filter
-  # e.g. summarise_OD_fixed(annotated_od, od.name = "OD595", is.na(Strain))
+  # e.g. summarise_od_fixed(annotated_od, od.name = "OD595", is.na(Strain))
   annotated_od %>%
     dplyr::filter(...) %>%
     dplyr::summarise(OD_median = median(OD595),
@@ -117,10 +117,10 @@ summarise_OD_fixed <- function(annotated_od, od.name = "OD595", ...) {
                      .groups = "keep")
 }
 
-summarise_OD_bytime <- function(annotated_od, od.name = "OD595", groups = "Time", ...) {
+summarise_od_bytime <- function(annotated_od, od.name = "OD595", groups = "Time", ...) {
   # summarise OD at each time
   # here use `...` input to pass conditions to filter
-  # e.g. summarise_OD_bytime(annotated_od, od.name = "OD595", groups = "Time", is.na(Strain))
+  # e.g. summarise_od_bytime(annotated_od, od.name = "OD595", groups = "Time", is.na(Strain))
   annotated_od %>%
     dplyr::filter(...) %>%
     dplyr::group_by(Time) %>%
@@ -131,17 +131,17 @@ summarise_OD_bytime <- function(annotated_od, od.name = "OD595", groups = "Time"
                      .groups = "keep")
 }
 
-normalise_OD_2ways <- function(annotatedod, ...) {
+normalise_od_2ways <- function(annotatedod, ...) {
   # normalise OD across a plate
   # will NOT work if there are multiple media in a plate; that would require an extra group_by or filtering internally.
   # here use `...` input to pass conditions to filter
-  # e.g. normalise_OD(annotated_od, is.na(Strain))
-  # e.g. normalise_OD(annotated_od, Well %in% c("A1","A2","A3")) 
+  # e.g. normalise_od_2ways(annotated_od, is.na(Strain))
+  # e.g. normalise_od_2ways(annotated_od, Well %in% c("A1","A2","A3")) 
   
   normvalues_fixed <- 
-    summarise_OD_fixed(annotatedod, od.name = "OD595", ...)
+    summarise_od_fixed(annotatedod, od.name = "OD595", ...)
   normvalues_bytime <- 
-    summarise_OD_bytime(annotatedod, od.name = "OD595", groups = "Time", ...)
+    summarise_od_bytime(annotatedod, od.name = "OD595", groups = "Time", ...)
   annotatedod %>%
     mutate(OD_corrected_fixed = OD595 - normvalues_fixed$OD_median) %>%
     left_join(normvalues_bytime, by = "Time") %>% 
@@ -157,11 +157,11 @@ load_annotate_platereader <-
     # mini pipeline: loads, annotates, reshapes, plate reader data
     # 
     raw_od <-
-      here::here(datadir, file_raw_od) %>%
+      here::here(datasubdir, file_raw_od) %>%
       read_platereader_xlsx(start_row = raw_od_start_row)
     
     platemap <- 
-      here::here(datadir, file_platemap) %>%
+      here::here(datasubdir, file_platemap) %>%
       read_platemap_csv(strain_df = strain_df)
     
     reshape_annotate_raw_od(raw_od = raw_od, 
@@ -218,6 +218,14 @@ ggplot_growthcurve_summary <- function(...) {
 
 ggplot_growthcurve_spline <- function(...) {
   ggplot_growthcurve(...) + 
+  ggformula::stat_spline(aes(color = Strain_nice),
+                         linewidth = 1) 
+}
+
+ggplot_growthcurve_spline_pluswells <- function(...) {
+  ggplot_growthcurve(...) + 
+  geom_line(aes(group = Well, color = Strain_nice), 
+            size = 0.2, alpha = 0.2) + 
   ggformula::stat_spline(aes(color = Strain_nice),
                          linewidth = 1) 
 }
