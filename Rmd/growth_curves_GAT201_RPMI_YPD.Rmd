@@ -26,15 +26,11 @@ Design:
 
 # Set up data frame of nice strain names, colours, styles.
 
-```{r nice_names}
+```{r strain_df}
 strain_df <- tibble( Strain = c("H99", "Gat201(B)", "Gat201(M)", "C26", "C30" ),
                      Strain_nice = c("GAT201", "gat201∆b","gat201∆m", "GAT201-C1", "GAT201-C2"),
                      colour = c("grey20", "magenta3", "darkred", "blue3", "cyan4"))
 
-scale_color_strain <- 
-  scale_color_manual("Strain",
-                     breaks = strain_df$Strain_nice,
-                     values = strain_df$colour)
 ```
 
 
@@ -42,8 +38,8 @@ scale_color_strain <-
 
 ## Read in transposed data as csv file RPMI
 
-```{r load_rawod_RPMI}
-rawod_RPMI <- 
+```{r load_raw_od_RPMI}
+raw_od_RPMI <- 
   here::here("data", "20200728_EH_PR2_RPMI_WT_Gat201.xlsx") %>%
   read_platereader_xlsx(start_row = 52)
 ```
@@ -64,8 +60,8 @@ head(platemap_RPMI, n=10)
 ## Reshape data and combine with the plate map, pairing them by Well RPMI
 
 ```{r reshape_annotate_RPMI}
-annotated_RPMI <- 
-  reshape_annotate_rawod(rawod = rawod_RPMI, platemap = platemap_RPMI)
+annotated_od_RPMI <- 
+  reshape_annotate_raw_od(raw_od = raw_od_RPMI, platemap = platemap_RPMI)
 ```
 
 ## Plot blank ODs RPMI
@@ -73,7 +69,7 @@ annotated_RPMI <-
 To find how stable the ODs of the blank wells are.
 
 ```{r plot_blank_ODs_RPMI, fig.width = 5, fig.height = 4}
-ggplot(data=filter(annotated_RPMI, is.na(Strain)),
+ggplot(data=filter(annotated_od_RPMI, is.na(Strain)),
        aes(x=Time, y=OD595,  group = Well)) + 
   geom_line() + 
   scale_time_hrs() + 
@@ -92,14 +88,14 @@ Remove well H2 that had a strange reading above.
 ```{r calc_blank_medians_RPMI}
 # filter out columns 1 and 12 as well?
 blank_OD_summary_RPMI <- 
-  summarise_OD_fixed(annotated_RPMI, od.name = "OD595",
+  summarise_OD_fixed(annotated_od_RPMI, od.name = "OD595",
                      is.na(Strain),
                      Well != "H2") 
 
 print(blank_OD_summary_RPMI)
 
 blank_OD_time_RPMI <- 
-  summarise_OD_bytime(annotated_RPMI, od.name = "OD595",
+  summarise_OD_bytime(annotated_od_RPMI, od.name = "OD595",
                      is.na(Strain),
                      Well != "H2") 
 
@@ -110,27 +106,21 @@ print(blank_OD_time_RPMI)
 
 ```{r subtract_blank_OD_RPMI}
 normalisedOD_RPMI <- 
-  normalise_OD_2ways(annotated_RPMI, is.na(Strain))
+  normalise_OD_2ways(annotated_od_RPMI, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary RPMI
 
 ```{r plot_all_stat_summary_RPMI, fig.width = 5, fig.height = 4}
-RPMI_plot <- ggplot(data = normalisedOD_RPMI %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
-  stat_summary(fun = "median", geom = "line", size = 1) +
-  scale_time_hrs() + 
-  # scale_y_continuous(limits = c(0, 0.9), 
-  #                    expand = c(0, 0), 
-  #                    breaks = c(0, 0.25, 0.5, 0.75)) +
-  scale_y_continuous(limits = c(0, 0.1),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595",
-       title = "RPMI") +
-  scale_color_strain
+RPMI_plot <- 
+  ggplot_growthcurve_summary(data_od = normalisedOD_RPMI %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,72),
+                             limits_od = c(0, 0.1),
+                             breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "RPMI")
 
 RPMI_plot
 ```
@@ -146,20 +136,15 @@ here::here("results",
 ## Plot OD corrected by time-based median summary RPMI
 
 ```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
-RPMI_spline_plot <- ggplot(data = normalisedOD_RPMI %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  ggformula::stat_spline(linewidth = 1) + 
-  scale_time_hrs() + 
-  # scale_y_continuous(limits = c(0, 0.9), 
-  #                    expand = c(0, 0), 
-  #                    breaks = c(0, 0.25, 0.5, 0.75)) +
-  scale_y_continuous(limits = c(0, 0.1),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595",
-       title = "RPMI") +
-  scale_color_strain
+RPMI_spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalisedOD_RPMI %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,72),
+                            limits_od = c(0, 0.1),
+                            breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "RPMI")
 
 RPMI_spline_plot
 ```
@@ -170,8 +155,8 @@ RPMI_spline_plot
 ## Read in transposed data as csv file YPD
 
 
-```{r load_rawod_YPD}
-rawod_YPD <- 
+```{r load_raw_od_YPD}
+raw_od_YPD <- 
   here::here("data", "20200807_EH_PR4_YPD_WT_Gat201.xlsx") %>%
   read_platereader_xlsx(start_row = 52)
 ```
@@ -192,8 +177,8 @@ head(platemap_YPD, n=10)
 ## Reshape data and combine with the plate map, pairing them by Well YPD
 
 ```{r reshape_annotate_YPD}
-annotated_YPD <- 
-  reshape_annotate_rawod(rawod = rawod_YPD, platemap = platemap_YPD)
+annotated_od_YPD <- 
+  reshape_annotate_raw_od(raw_od = raw_od_YPD, platemap = platemap_YPD)
 ```
 
 ## Plot blank ODs YPD
@@ -201,7 +186,7 @@ annotated_YPD <-
 To find how stable the ODs of the blank wells are.
 
 ```{r plot_blank_ODs_YPD, fig.width = 5, fig.height = 3.5}
-ggplot(data=filter(annotated_YPD, is.na(Strain)),
+ggplot(data=filter(annotated_od_YPD, is.na(Strain)),
            aes(x=Time, y=OD595,  group = Well)) + 
   geom_line() + 
   scale_time_hrs() + 
@@ -216,13 +201,13 @@ ggplot(data=filter(annotated_YPD, is.na(Strain)),
 ```{r calc_blank_medians_YPD}
 # filter out columns 1 and 12 as well?
 blank_OD_summary_YPD <- 
-  summarise_OD_fixed(annotated_YPD, od.name = "OD595",
+  summarise_OD_fixed(annotated_od_YPD, od.name = "OD595",
                      is.na(Strain)) 
 
 print(blank_OD_summary_YPD)
 
 blank_OD_time_YPD <- 
-  summarise_OD_bytime(annotated_YPD, od.name = "OD595",
+  summarise_OD_bytime(annotated_od_YPD, od.name = "OD595",
                      is.na(Strain)) 
 
 print(blank_OD_time_YPD)
@@ -232,27 +217,21 @@ print(blank_OD_time_YPD)
 
 ```{r subtract_blank_OD_YPD}
 normalisedOD_YPD <- 
-  normalise_OD_2ways(annotated_YPD, is.na(Strain))
+  normalise_OD_2ways(annotated_od_YPD, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary YPD
 
 ```{r plot_all_stat_summary_YPD, fig.width = 5, fig.height = 3.5}
-YPD_plot <- ggplot(data = normalisedOD_YPD %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
-  stat_summary(fun = "median", geom = "line", size = 1) +
-  scale_time_hrs() + 
-  scale_y_continuous(limits = c(0, 0.9),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.1, 0.25, 0.5, 0.75)) +
-  # scale_y_continuous(limits = c(0, 0.1),
-  #                    expand = c(0, 0),
-  #                    breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595",
-       title = "YPD") +
-  scale_color_strain
+YPD_plot  <- 
+  ggplot_growthcurve_summary(data_od = normalisedOD_YPD %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,72),
+                             limits_od = c(0, 0.9),
+                             breaks_od = c(0, 0.1, 0.25, 0.5, 0.75)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "YPD")
 
 YPD_plot
 ```
@@ -268,20 +247,15 @@ here::here("results",
 ## Plot OD corrected by time-based median summary spline smooth YPD
 
 ```{r plot_all_stat_spline_YPD, fig.width = 5, fig.height = 3.5}
-YPD_spline_plot <- ggplot(data = normalisedOD_YPD %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  ggformula::stat_spline(linewidth = 1) + 
-  scale_time_hrs() + 
-  scale_y_continuous(limits = c(0, 0.9),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.1, 0.25, 0.5, 0.75)) +
-  # scale_y_continuous(limits = c(0, 0.1),
-  #                    expand = c(0, 0),
-  #                    breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595",
-       title = "YPD") +
-  scale_color_strain
+YPD_spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalisedOD_YPD %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,72),
+                            limits_od = c(0, 0.9),
+                            breaks_od = c(0, 0.1, 0.25, 0.5, 0.75)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "YPD")
 
 YPD_spline_plot
 ```

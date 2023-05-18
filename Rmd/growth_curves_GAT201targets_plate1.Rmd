@@ -27,23 +27,18 @@ Design:
 
 # Set up data frame of nice strain names, colours, styles.
 
-```{r nice_names}
-strain_df <- tibble( 
+```{r strain_df}
+strain_df_1 <- tibble( 
                     Strain = c("KN99 (WT)", "GAT201", "GAT204", "LIV3", "BLP1"),
                     Strain_nice =  c("WT", "gat201∆", "gat204∆", "liv3∆", "blp1∆"),
                     colour = c("grey20", "darkred", "#d95f02", "#1b9e77",   "#7570b3"))
-
-scale_color_strain <- 
-  scale_color_manual("Strain",
-                     breaks = strain_df$Strain_nice,
-                     values = strain_df$colour)
 ```
 
 
 ## Read in transposed data as csv file
 
-```{r load_rawod}
-rawod <-
+```{r load_raw_od}
+raw_od <-
   here::here("data", "20230308_RPMI_Gat201Targets_Plate1.xlsx") %>%
   read_platereader_xlsx(start_row = 52)
 ```
@@ -55,7 +50,7 @@ Also combine with nice strain names for display.
 ```{r load_platemap}
 platemap <- 
   here::here("data", "20230308_RPMI_Gat201Targets_Plate1_setup.csv") %>%
-  read_platemap_csv(strain_df = strain_df) 
+  read_platemap_csv(strain_df = strain_df_1) 
 
 head(platemap, n=10)
 
@@ -64,8 +59,8 @@ head(platemap, n=10)
 ## Reshape data and combine with the plate map, pairing them by Well
 
 ```{r reshape_annotate}
-annotated <- 
-  reshape_annotate_rawod(rawod = rawod, platemap = platemap)
+annotated_od <- 
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
 ```
 
 ## Plot blank ODs
@@ -73,14 +68,12 @@ annotated <-
 To find how stable the ODs of the blank wells are.
 
 ```{r plot_blank_ODs, fig.width = 5, fig.height = 4}
-ggplot(data=filter(annotated, is.na(Strain)),
-       aes(x=Time, y=OD595,  group = Well)) + 
-  geom_line() + 
-  scale_time_hrs(limits = c(0, 48)) + 
-  scale_y_continuous(limits = c(0, 0.2),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.05, 0.1, 0.15)) +
-  labs(title = "Blank wells RPMI", x="Time (hours)", y="Absorbance at 595 nm")
+ggplot_growthcurve(data_od=filter(annotated_od, is.na(Strain)),
+                   limits_time = c(0,48),
+                   limits_od = c(0, 0.2),
+                   breaks_od = c(0, 0.05, 0.1, 0.15)) + 
+  geom_line(aes(group = Well)) + 
+  labs(title = "Blank wells RPMI")
 ```
 
 This shows that the OD increases over time, presumably pH change of the phenol red indicator. We correct for this.
@@ -90,13 +83,13 @@ This shows that the OD increases over time, presumably pH change of the phenol r
 ```{r calc_blank_medians}
 # filter out columns 1 and 12 as well?
 blank_OD_summary <- 
-  summarise_OD_fixed(annotated, od.name = "OD595",
+  summarise_OD_fixed(annotated_od, od.name = "OD595",
                      is.na(Strain)) 
 
 print(blank_OD_summary)
 
 blank_OD_time <- 
-  summarise_OD_bytime(annotated, od.name = "OD595",
+  summarise_OD_bytime(annotated_od, od.name = "OD595",
                      is.na(Strain)) 
 
 print(blank_OD_time)
@@ -106,59 +99,47 @@ print(blank_OD_time)
 
 ```{r subtract_blank_OD}
 normalisedOD <- 
-  normalise_OD_2ways(annotated, is.na(Strain))
+  normalise_OD_2ways(annotated_od, is.na(Strain))
 ```
 
 ## Plot OD corrected by time-based median summary
 
 ```{r plot_all_stat_summary, fig.width = 5, fig.height = 3.75}
-RPMI_plot <- ggplot(data = normalisedOD %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
-  stat_summary(fun = "median", geom = "line", linewidth = 1) +
-  scale_time_hrs(limits = c(0, 48)) + 
-  scale_y_continuous(limits = c(0, 0.1),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595") +
-  scale_color_strain
+plot_plate1 <- 
+  ggplot_growthcurve_summary(data_od = normalisedOD %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,48)) +
+  scale_color_strain(strain_df_1)
 
-RPMI_plot
+plot_plate1
 ```
 
 
 ```{r save_png_summary}
 here::here("results",
            "20230308_RPMI_Gat201Targets_Plate1_summaryplot.png") %>%
-  ggsave(plot = RPMI_plot,
+  ggsave(plot = plot_plate1,
          width = 5, height = 3.75)
 ```
 
 ## Plot OD corrected by time-based median summary, smoothed
 
 ```{r plot_all_stat_spline, fig.width = 5, fig.height = 3.75}
-library(ggformula)
-RPMI_plot <- ggplot(data = normalisedOD %>%
-                      filter(!is.na(Strain)), 
-                    aes(x = Time, y = OD_corrected_time, color = Strain_nice)) + 
-  # geom_line(aes(group = Well), size = 0.2, alpha = 0.2) + 
-  # stat_smooth(size = 1, n = 20, se = FALSE) +
-  ggformula::stat_spline(linewidth = 1) + 
-  scale_time_hrs(limits = c(0, 48)) + 
-  scale_y_continuous(limits = c(0, 0.1),
-                     expand = c(0, 0),
-                     breaks = c(0, 0.05, 0.1)) +
-  labs(y = "OD595") +
-  scale_color_strain
+plot_plate1_spline <- 
+  ggplot_growthcurve_spline(data_od = normalisedOD %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,48)) +
+  scale_color_strain(strain_df_1) 
 
-RPMI_plot
+plot_plate1_spline
 ```
 
 ```{r save_png_spline}
 here::here("results",
            "20230308_RPMI_Gat201Targets_Plate1_splineplot.png") %>%
-  ggsave(plot = RPMI_plot,
+  ggsave(plot = plot_plate1_spline,
          width = 5, height = 3.75)
 ```
 

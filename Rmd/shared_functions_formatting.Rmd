@@ -11,12 +11,13 @@ knitr::opts_chunk$set(echo = TRUE , warning=FALSE, message=FALSE)
 
 
 ```{r load_packages, echo=FALSE}
-library(tidyverse)
-library(reshape2)
-library(cowplot)
-library(readxl)
-library(extrafont)
-library(here)
+library(tidyverse) # data wrangling, ggplot, etc.
+library(reshape2)  # reshape for plate data
+library(cowplot)   # nice plot defaults, plot_grid
+library(readxl)    # read excel files
+library(extrafont) # specify Arial font
+library(here)      # find files with relative paths
+library(ggformula) # smooth plots with stat_spline
 ```
 
 ```{r shared_formatting, echo=FALSE}
@@ -34,18 +35,6 @@ theme_set(
                          colour = "grey90"))
 )
 
-scale_time_hrs <- function(name = "Time (hours)", 
-                           breaks = c(0, 12, 24, 48, 72),
-                           limits = c(0, 72),
-                           expand = c(0, 0),
-                           ...) {
-  # time in hours with defaults for plate reader growth curves
-  scale_x_continuous(name = name, 
-                     breaks = breaks,
-                     limits = limits,
-                     expand = expand,
-                     ...)
-}
 ```
 
 
@@ -100,18 +89,20 @@ read_platemap_csv <- function(file, strain_df = NULL, ...) {
   platemap
 }
 
-reshape_annotate_rawod <- function(rawod, platemap, 
-                                   od.name = "OD595", 
-                                   melt.id = "Time", 
-                                   well.name = "Well") {
-  rawod %>%
-    # Tidy the data using the melt function from reshape2
-    reshape2::melt(id = melt.id, 
-                   variable.name = well.name,
-                   value.name =  od.name) %>%
-    # Annotate by joining with the platemap
-    inner_join(platemap, by = well.name)
-}
+reshape_annotate_raw_od <- 
+  function(raw_od, 
+           platemap, 
+           od.name = "OD595", 
+           melt.id = "Time", 
+           well.name = "Well") {
+    raw_od %>%
+      # Tidy the data using the melt function from reshape2
+      reshape2::melt(id = melt.id, 
+                     variable.name = well.name,
+                     value.name =  od.name) %>%
+      # Annotate by joining with the platemap
+      inner_join(platemap, by = well.name)
+  }
 
 summarise_OD_fixed <- function(annotated_od, od.name = "OD595", ...) {
   # summarise OD fixed value across many times
@@ -155,5 +146,79 @@ normalise_OD_2ways <- function(annotatedod, ...) {
     mutate(OD_corrected_fixed = OD595 - normvalues_fixed$OD_median) %>%
     left_join(normvalues_bytime, by = "Time") %>% 
     mutate(OD_corrected_time = OD595 - OD_median_time) 
+}
+
+load_annotate_platereader <- 
+  function(file_raw_od, 
+           file_platemap, 
+           datasubdir = "data",
+           strain_df = NULL,
+           raw_od_start_row = 52) {
+    # mini pipeline: loads, annotates, reshapes, plate reader data
+    # 
+    raw_od <-
+      here::here(datadir, file_raw_od) %>%
+      read_platereader_xlsx(start_row = raw_od_start_row)
+    
+    platemap <- 
+      here::here(datadir, file_platemap) %>%
+      read_platemap_csv(strain_df = strain_df)
+    
+    reshape_annotate_raw_od(raw_od = raw_od, 
+                           platemap = platemap)
+  }
+```
+
+```{r growthcurve_plotfunctions}
+scale_time_hrs <- function(name = "Time (hours)", 
+                           breaks = c(0, 12, 24, 48, 72),
+                           limits = c(0, 72),
+                           expand = c(0, 0),
+                           ...) {
+  # time in hours with defaults for plate reader growth curves
+  scale_x_continuous(name = name, 
+                     breaks = breaks,
+                     limits = limits,
+                     expand = expand,
+                     ...)
+}
+
+scale_color_strain <- function(strain_df, ...) {
+  scale_color_manual(name = "Strain",
+                     breaks = strain_df$Strain_nice,
+                     values = strain_df$colour,
+                     ...)
+}
+
+ggplot_growthcurve <- 
+  function(data_od,
+           value_od = "OD595",
+           limits_time = c(0, 72), 
+           limits_od = c(0, 0.1),
+           breaks_od = c(0, 0.05, 0.1)) {
+    # basic plot defaults for growth curve 
+    # e.g. 
+    ggplot(data = data_od, 
+           aes(x = Time, 
+               y = .data[[value_od]])) + 
+      scale_time_hrs(limits = limits_time) + 
+      scale_y_continuous(name = "OD595",
+                         limits = limits_od,
+                         expand = c(0, 0),
+                         breaks = breaks_od)
+  }
+
+ggplot_growthcurve_summary <- function(...) {
+  ggplot_growthcurve(...) + 
+  geom_line(aes(group = Well, color = Strain_nice), 
+            size = 0.2, alpha = 0.2) + 
+  stat_summary(aes(color = Strain_nice), 
+               fun = "median", geom = "line", linewidth = 1)
+}
+
+ggplot_growthcurve_spline <- function(...) {
+  ggplot_growthcurve(...) + 
+  ggformula::stat_spline(aes(color = Strain_nice),
+                         linewidth = 1) 
 }
 ```
