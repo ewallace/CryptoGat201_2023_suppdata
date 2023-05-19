@@ -156,6 +156,15 @@ here::here("results",
          width = 5, height = 3.75)
 ```
 
+```{r save_svg_spline}
+here::here("results",
+           "20230308_RPMI_Gat201Targets_Plate1_splineplot.svg") %>%
+  ggsave(plot = plot_plate_1_spline + 
+           theme(legend.position = "bottom") + 
+           guides(colour = guide_legend(ncol = 1)),
+         width = 3.3, height = 4)
+```
+
 
 # Plate 2: WT, gat201∆, ecm2201∆, mep1∆, pdr802∆
 
