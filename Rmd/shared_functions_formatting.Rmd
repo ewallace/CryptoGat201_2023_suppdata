@@ -170,7 +170,7 @@ load_annotate_platereader <-
   }
 ```
 
-```{r growthcurve_plotfunctions}
+```{r growthcurve_plotfunctions, echo = FALSE}
 scale_time_hrs <- function(name = "Time (hours)", 
                            breaks = c(0, 12, 24, 48, 72),
                            limits = c(0, 72),
@@ -212,7 +212,7 @@ ggplot_growthcurve <-
 ggplot_growthcurve_summary <- function(...) {
   ggplot_growthcurve(...) + 
   geom_line(aes(group = Well, color = Strain_nice), 
-            size = 0.2, alpha = 0.2) + 
+            linewidth = 0.2, alpha = 0.2) + 
   stat_summary(aes(color = Strain_nice), 
                fun = "median", geom = "line", linewidth = 1)
 }
@@ -226,7 +226,7 @@ ggplot_growthcurve_spline <- function(...) {
 ggplot_growthcurve_spline_pluswells <- function(...) {
   ggplot_growthcurve(...) + 
   geom_line(aes(group = Well, color = Strain_nice), 
-            size = 0.2, alpha = 0.2) + 
+            linewidth = 0.2, alpha = 0.2) + 
   ggformula::stat_spline(aes(color = Strain_nice),
                          linewidth = 1) 
 }

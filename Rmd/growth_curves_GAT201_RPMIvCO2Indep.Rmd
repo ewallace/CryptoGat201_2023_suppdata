@@ -1,0 +1,252 @@
+---
+title: "Plate reader growth curves of GAT201 mutants in RPMI and CO2-independent media"
+author: "Liz Hughes & Edward Wallace"
+date: "23/05/2023"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Summary
+
+Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant 003(Madhani) in RPMI and CO2 independent media.
+
+- 5 Bioreps, 3 Techreps each.
+- Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
+- Seed at OD 600nm = 0.2 , 200 ul per well.
+- Run for 3 days (400 cycles).
+
+Data in file `20221216_RPMIvCO2Indep.xlsx`.
+
+# Set up data frame of nice strain names, colours, styles.
+
+```{r strain_df}
+strain_df <- tibble( Strain      = c("KN99",   "GAT201"),
+                     Strain_nice = c("GAT201", "gat201∆m"),
+                     colour      = c("grey20", "darkred"))
+
+```
+
+
+# RPMI media analysis
+
+## Read in raw data
+
+```{r load_raw_od}
+raw_od <- 
+  here::here("data", "20221216_PR27_RPMIvCO2Indep.xlsx") %>%
+  read_platereader_xlsx(start_row = 52)
+```
+
+## Read in the Plate map data from csv file RPMI
+
+Also combine with nice strain names for display.
+
+```{r load_platemap}
+platemap <- 
+  here::here("data", "20221216_PR27_RPMIvCO2Indep_Setup.csv") %>%
+  read_platemap_csv(strain_df = strain_df) 
+
+head(platemap, n=10)
+
+```
+
+## Reshape data and combine with the plate map, pairing them by Well
+
+And split into RPMI and CO2indep
+```{r reshape_annotate}
+annotated_od <- 
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+
+annotated_od_RPMI <- annotated_od %>%
+  dplyr::filter(Media == "R")
+
+annotated_od_CO2i <- annotated_od %>%
+  dplyr::filter(Media == "CO2")
+```
+
+## Plot blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od, is.na(Strain)),
+       aes(x=Time, y=OD595,  group = Well, colour = Media)) + 
+  geom_line() + 
+  scale_time_hrs() + 
+  scale_y_continuous(limits = c(0, 0.3),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  labs(title = "Blank wells", x="Time (hours)", y="raw OD595") +
+  scale_colour_manual(values = c("R" = "blue", "CO2" = "goldenrod"),
+                      labels = c("R" = "RPMI with NaHCO3", "CO2" = "CO2-independent"))
+```
+
+This shows that the OD increases over time, presumably pH change of the phenol red indicator. And it is very different in the two media.
+
+## Calculate median OD for blank wells
+
+
+```{r calc_blank_medians}
+# filter out columns 1 and 12 as well?
+blank_od_summary <- 
+  annotated_od %>%
+  dplyr::group_by(Media) %>%
+  summarise_od_fixed(od.name = "OD595",
+                     is.na(Strain)) 
+
+print(blank_od_summary)
+
+blank_od_time <- 
+  annotated_od %>%
+  dplyr::group_by(Media) %>%
+  summarise_od_bytime(od.name = "OD595",
+                     is.na(Strain),
+                     Well != "H2") 
+
+print(blank_od_time)
+```
+
+## Subtract blank OD to make corrected OD RPMI
+
+First check and filter out wells with weird traces, from the blank OD plot above we want to remove wells that go over OD = 0.18
+
+```{r subtract_blank_OD_RPMI}
+bad_blank_wells <- annotated_od_RPMI %>%
+  dplyr::filter(OD595 > 0.18, is.na(Strain)) %>%
+  dplyr::pull(Well) %>%
+  unique()
+  
+bad_blank_wells
+
+normalised_od_RPMI <- 
+  annotated_od_RPMI %>%
+  dplyr::filter(!(Well %in% bad_blank_wells)) %>%
+  normalise_od_2ways(is.na(Strain))
+```
+
+## Plot OD corrected by time-based median summary RPMI
+
+```{r plot_all_stat_summary_RPMI, fig.width = 5, fig.height = 4}
+RPMI_plot <- 
+  ggplot_growthcurve_summary(data_od = normalised_od_RPMI %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,72),
+                             limits_od = c(0, 0.1),
+                             breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "RPMI buffered with NaHCO3")
+
+RPMI_plot
+```
+
+
+## Plot OD corrected by time-based median summary RPMI
+
+```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
+RPMI_spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalised_od_RPMI %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,72),
+                            limits_od = c(0, 0.1),
+                            breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)  +
+  labs(title = "RPMI buffered with NaHCO3")
+
+RPMI_spline_plot
+```
+
+
+
+## Subtract blank OD to make corrected OD CO2i
+
+```{r subtract_blank_OD_CO2i}
+normalised_od_CO2i <- 
+  normalise_od_2ways(annotated_od_CO2i, is.na(Strain))
+```
+
+## Plot OD corrected by time-based median summary CO2i
+
+```{r plot_all_stat_summary_CO2i, fig.width = 5, fig.height = 4}
+CO2i_plot <- 
+  ggplot_growthcurve_summary(data_od = normalised_od_CO2i %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,72),
+                             limits_od = c(0, 2),
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4)) +
+  scale_color_strain(strain_df)  +
+  coord_cartesian(ylim = c(0,0.45)) + 
+  labs(title = "CO2-independent media")
+
+CO2i_plot
+```
+
+
+## Plot OD corrected by time-based median summary CO2i
+
+```{r plot_all_stat_spline_CO2i, fig.width = 5, fig.height = 4}
+CO2i_spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalised_od_CO2i %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,72),
+                            limits_od = c(0, 2),
+                            breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4)) +
+  scale_color_strain(strain_df)  +
+  coord_cartesian(ylim = c(0,0.45)) + 
+  labs(title = "CO2-independent media")
+
+CO2i_spline_plot
+```
+
+# Multipanel Figure combining RPMI and CO2i results
+
+```{r multifig, fig.height = 4, fig.width = 3.75}
+multi_plot <- 
+  plot_grid(
+    RPMI_spline_plot,
+    CO2i_spline_plot,
+    ncol = 1)
+
+multi_plot
+```
+
+
+```{r save_png}
+here::here("results",
+           "fig_growthcurves_RPMI_CO2independent.png") %>%
+  ggsave(plot = multi_plot,
+         width = 3.75, height = 4)
+```
+
+# Session info for reproducibility
+
+```{r session_info}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
