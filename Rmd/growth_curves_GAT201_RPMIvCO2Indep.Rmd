@@ -13,7 +13,7 @@ output:
 
 # Summary
 
-Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant 003(Madhani) in RPMI and CO2 independent media.
+Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant Madhani in RPMI and CO2 independent media.
 
 - 5 Bioreps, 3 Techreps each.
 - Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
@@ -222,8 +222,8 @@ multi_plot
 ```{r save_png}
 here::here("results",
            "fig_growthcurves_RPMI_CO2independent.png") %>%
-  ggsave(plot = multi_plot,
-         width = 3.75, height = 4)
+  ggsave(plot = CO2i_spline_plot,
+         width = 3.75, height = 3)
 ```
 
 # Session info for reproducibility
