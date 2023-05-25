@@ -1,0 +1,118 @@
+---
+title: "Colony Forming Units assay"
+author: "Liz Hughes & Edward Wallace"
+date: "31/10/2022"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Summary
+
+Collated OD measurements and average cell counts (from CFU assays).
+
+2022-10-31 Comparison of growth of H99 and gat201∆m mutant (Madhani collection) and 2 Gat201 complemented strains (GAT201-C1, formerly C26; GAT201-C2, formerly C30) into the Madhani deletion background in RPMI and RPMI + Serum (10% FBS) at 37°C over a 60 hour time course.
+
+Samples were collected at 4, 12, 24, 36, 48 and 60 hours post inoculation into fresh media. A 1:10 dilution series was carried out from neat to 10e-4. 100 microlitres of dilutions 10e3 and 10e4 were plated out onto YPD Agar, incubated for 48 hours and colonies counted.
+
+The average of cells/ml over the 2 dilutions were used as input for the data analysis.
+
+
+## Read in data as csv file
+
+```{r nice_names}
+strain_df <- tibble( Strain      = c("WT", "Gat201 del", "C26", "C30" ),
+                     Strain_nice = c("GAT201", "gat201∆m", "GAT201-C1", "GAT201-C2"),
+                     colour      = c("grey20", "darkred", "blue3", "cyan4"))
+
+scale_color_strain <- 
+  scale_color_manual("Strain",
+                     breaks = strain_df$Strain_nice,
+                     values = strain_df$colour)
+```
+
+```{r load_Cfu_data}
+
+cfu_data <- 
+  here::here("data", "20221025_CFU60_RPMI_RPMIserum.csv") %>%
+  readr::read_csv(comment = "#") %>%
+  left_join(strain_df, by = "Strain") %>%
+  mutate(Time_days   = Time/24, 
+         BioRep      = as_factor(BioRep),
+         Strain      = as_factor(Strain),
+         Strain_nice = as_factor(Strain_nice))
+```
+
+
+
+## Create Cfu plot
+### First look at data.
+
+
+```{r plot_all}
+Cfu_Plot <- 
+  ggplot(cfu_data,
+         aes(x = Time_days, y = Cells, colour = Media)) +
+  geom_point(aes(shape = BioRep), size=3) +
+  labs(x="Time (Days)", 
+       y="Number of Cells/ml", 
+       title = "CFU assay at 37°C") +
+  scale_x_continuous(expand = c(0, 0), breaks = 0:3, limits = c(0,3)) + 
+  scale_y_continuous(breaks = c(10, 100000,  1000000, 10000000)) +
+  facet_wrap(~Strain_nice)
+
+Cfu_Plot
+```
+
+
+
+## Plot mean CFU
+
+
+```{r plot_all_mean_dash, fig.height = 4, fig.width = 3.75}
+
+Cfu_Plot2 <- 
+  ggplot(cfu_data,
+         aes(x = Time, y = Cells, colour = Strain_nice)) +
+  geom_point(aes(shape = BioRep), size=1) +
+  scale_color_strain +
+  facet_wrap(~ Media, ncol = 1, scales = "free_x") +
+  labs(x = "Time (hours)", 
+       y = "Number of Colonies/ml",
+       shape = "Replicate") +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = c(0, 4, 12, 24, 36, 48, 60)) + 
+  scale_y_continuous(trans = scales::pseudo_log_trans(sigma =100000,
+                                                    base =  exp(1)),
+                     breaks = c(0, 100000, 500000, 1000000, 5000000),
+                     expand = c(0, 0),
+                    labels = parse(text = c("0", "10^5", "5 %*% 10^5",  "10^6", "5 %*% 10^6"))) +
+  coord_cartesian(clip = "off") +
+  guides(colour = guide_legend(order = 1),
+         shape = guide_legend(order = 2)) +
+  theme(panel.border = element_blank())
+
+Cfu_Plot2_mean <-  Cfu_Plot2 + 
+  stat_summary(aes(group = Strain), 
+               fun = mean, geom="line", 
+               linetype = "longdash", size = 0.6)
+
+Cfu_Plot2_mean
+```
+
+
+```{r mean_plot_all_RRS.png}
+ggsave("../Results/cfu_mean_plot_all_RRS.png",
+       width = 3.75, height = 4)
+```
+
+```{r mean_plot_all_RRS.svg}
+ggsave("../Results/cfu_mean_plot_all_RRS.svg",
+       width = 3.75, height = 4)
+```
+
+
