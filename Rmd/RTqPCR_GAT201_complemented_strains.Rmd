@@ -1,0 +1,295 @@
+---
+title: "RT-qPCR 2022-10-14 GAT201 complemented strains and targets"
+author: "Liz Hughes & Edward Wallace"
+date: "07/10/2022"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Experimental Design
+
+This experiment was set up to examine the expression of GAT201 and some key targets (GAT204, LIV3) in different strains of *Cryptococcus neoformans* grown under the same conditions.
+
+Strains: 
+H99, KN99-alpha, Madhani-Gat201 deletion mutant (gat20l∆m) and 2 Gat201 complemented strains (in background of gat20l∆m strain) C26 (GAT201-C1) and C30 (GAT201-C2).
+
+Culture conditions:
+Set up overnight cultures from a single colony in YPD at 30 degrees, 150rpm, 2 biological replicates.
+Cultures were set up in 20 ml RPMI at an OD of 0.1 from the ON culture.
+Cells were washed with RPMI prior to testing the OD and setting up cultures in RPMI.
+Cultures were incubated at 37 degrees, 150rpm for 7 hours.
+
+Sample collection: 
+19 ml Samples were collected at 6 hours. Samples were fixed in methanol on dry ice for 3-5 mins. My Cryptococcus RNA extraction protocol was followed to isolate RNA from samples.The samples were NOT lyophilise due to timr constraints.
+
+Replicates:
+- 3 biological replicates were collected for each strain
+- 3 technical replicates +RT and 1 -RT
+
+Test Primers:
+- GAT201 CNAG_01551 (Set 1)
+- GAT201 CNAG_06762 (Set 1)
+- LIV3 CNAG_05835 (Set 1)
+
+
+Reference gene primers: 
+- SRP14 CNAG_04994
+- ACT1 CNAG_00483
+- GPD1 CNAG_00121
+
+
+
+```{r load_tidyqpcr}
+library(tidyqpcr)
+```
+
+# Describe the experimental design in a plate plan
+
+## Columns are target_ids of primer sets
+
+```{r target_ids}
+colkey <- create_colkey_6_in_24(
+  target_id = c("GAT201", "GAT204", "LIV3", "SRP14", "ACT1", "GPD1") %>% 
+    as_factor()
+)
+
+print(colkey)
+```
+
+
+## Rows are sample name, Strain, BioRep (3) and TechRep (3)
+
+Also choose colours to display strains.
+
+```{r samples}
+strain_df <- tibble( Strain = c("H99", "KN99alpha", "deltaGat201", "C26", "C30" ),
+                     Strain_nice = c("H99", "GAT201", "gat201∆m", "GAT201-C1", "GAT201-C2"),
+                     colour = c("khaki4", "grey20",  "darkred", "blue3", "cyan4"))
+
+scale_color_strain <- 
+  scale_color_manual("Strain",
+                     breaks = strain_df$Strain_nice,
+                     values = strain_df$colour)
+
+rowkey <- tibble(well_row = LETTERS[1:15], 
+                 Strain = strain_df$Strain %>% 
+                   rep(each = 3) %>% 
+                   as_factor(),
+                 Strain_nice = strain_df$Strain_nice %>% 
+                   rep(each = 3) %>% 
+                   as_factor(),
+                 BioRep = 1:3 %>% 
+                   as_factor() %>%
+                   rep(times = 5)) %>%
+  unite(sample_id, Strain, BioRep, remove = FALSE) %>%
+  mutate(sample_id = as_factor(sample_id))
+
+print(rowkey)
+```
+
+
+## Combine into plate plan
+
+```{r plate_plan, fig.width = 12, fig.height = 8}
+
+plate_plan <- label_plate_rowcol(
+  plate = create_blank_plate(well_row = LETTERS[1:15], well_col = 1:24),
+  rowkey = rowkey,
+  colkey = colkey
+)
+
+print(plate_plan)
+display_plate_qpcr(plate_plan)
+
+```
+
+
+
+# Load data of RT-qPCR results in Cq format
+
+```{r load_data}
+
+plate <- here::here("data","20221014_ComplementCheck_EH_Ct.txt") %>%
+  read_tsv(skip=1) %>%
+    mutate(well=Pos,cq=Cp) %>%
+    right_join(plate_plan)
+
+plate
+```
+
+
+# Plot all replicates, unnormalized
+
+
+```{r plot_plate, fig.width = 7, fig.height = 9}
+
+ggplot(data = plate) +
+  geom_point(aes(x = target_id, y = cq, shape = prep_type, colour = target_id),
+    position = position_jitter(width = 0.2, height = 0)
+  ) +
+  labs(
+    y = "Quantification cycle (Cq)",
+    title = "All reps, unnormalized"
+  ) +
+  facet_wrap(~sample_id, ncol = 3) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+
+```
+
+The high or absent Cq values in -RT reactions indicate absence of DNA contamination.
+
+
+# Check reference genes have consistent Cq across samples
+
+```{r plate_sep_refgenes, fig.width = 10, fig.height = 4}
+ggplot(data = filter(plate, target_id == c("SRP14", "ACT1", "GPD1") )) +
+  geom_point(aes(x = target_id, y = cq, shape = prep_type, colour = target_id),
+    position = position_jitter(width = 0.2, height = 0)
+  ) +
+  labs(
+    y = "Quantification cycle (Cq)",
+    title = "All reps, unnormalized"
+  ) +
+  facet_grid(~sample_id) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+These reference genes have consistent Cq across samples.
+
+
+# Normalise data by calculating ∆Cq against median of 3 reference genes
+
+
+```{r plate_norm}
+
+plate_norm <- plate %>%
+  filter(prep_type == "+RT" )%>%
+  calculate_deltacq_bysampleid(ref_target_ids = c("SRP14", "ACT1", "GPD1"))
+
+plate_norm
+
+plate_norm_med <- plate_norm %>%
+  group_by(sample_id, Strain, Strain_nice, BioRep, target_id) %>%
+  summarize(
+    delta_cq = median(delta_cq, na.rm = TRUE),
+    rel_abund = median(rel_abund, na.rm = TRUE)
+  )
+
+plate_norm_med
+
+```
+
+# Plot ∆Cq for normalized data
+
+For all replicates of all genes, all samples.
+
+```{r plot_deltacq_all, fig.width = 8, fig.height = 4}
+
+ggplot(data = plate_norm) +
+  geom_point(aes(x = target_id, y = delta_cq, shape = BioRep, colour = Strain_nice ),
+    position = position_jitter(width = 0.2, height = 0)
+  ) +
+  
+  labs(x = "Target Gene", 
+       y = "Relative mRNA detection (∆Cq)") +
+    scale_color_strain
+
+```
+
+This again shows that reference genes have consistent ∆Cq across samples, while GAT201 targets differ.
+
+
+# Normalise data by calculating ∆∆Cq against median of 3 reference samples (KN99alpha)
+
+```{r plate_deltanorm}
+plate_deltanorm <- plate_norm %>%
+  calculate_deltadeltacq_bytargetid(ref_sample_ids = c("KN99alpha_1", "KN99alpha_2", "KN99alpha_3"))
+
+plate_deltanorm_med <- plate_deltanorm %>%
+    group_by(sample_id, target_id, Strain, Strain_nice, BioRep) %>%
+  summarize(
+    deltadelta_cq  = median(deltadelta_cq, na.rm = TRUE),
+    fold_change    = median(fold_change,   na.rm = TRUE)
+  )
+
+plate_deltanorm
+```
+
+
+# Plot ∆∆Cq for normalized data
+
+For all genes, all samples, summarized by biological replicate.
+
+```{r plot_deltadelta_cq, fig.width = 8, fig.height = 4}
+set.seed(4)
+ggplot(data = plate_deltanorm_med,
+       aes(x = target_id, y = deltadelta_cq, colour = Strain_nice)
+       ) +
+  geom_point(
+    position = position_jitter(width = 0.4, height = 0),
+    size = 2
+  ) +
+  stat_summary(geom = "crossbar", fun.y = mean, fun.ymin = NULL, fun.ymax = NULL) +
+  labs(x = "Target Gene", 
+       y = "∆∆Cq (log2 fold-change)") +
+    scale_color_strain
+
+```
+
+# Plot ∆∆Cq for GAT201 targets only, summarized by biological replicate
+
+```{r plot_deltadelta_cq_facet, fig.width = 7.5, fig.height = 4}
+set.seed(3)
+plot_deltadelta_cq_facet <- 
+  ggplot(data = plate_deltanorm_med %>%
+           dplyr::filter(
+             target_id %in% c("GAT201", "GAT204", "LIV3"),
+             Strain != c("H99")
+           ),
+         aes(x = Strain_nice, y = deltadelta_cq, colour = Strain_nice)
+  ) +
+  geom_point(
+    position = position_jitter(width = 0.2, height = 0),
+    size = 2
+  ) +
+  stat_summary(geom = "crossbar", fun.y = mean, fun.ymin = NULL, fun.ymax = NULL,
+               key_glyph = "rect") +
+  labs(x = "Strain", 
+       y = "log2 fold-change (∆∆Cq)") +
+  facet_wrap(~target_id) +
+  scale_color_strain +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 45, vjust = 0.8, hjust = 0.8, face = "italic"),
+        legend.text = element_text(face = "italic"))
+plot_deltadelta_cq_facet
+```
+
+```{r save_plot_deltadelta_cq_facet}
+set.seed(3)
+here::here("results", 
+           "RTqPCR_GAT201_complemented_strains_deltadeltacq.png") %>%
+  ggsave(plot = plot_deltadelta_cq_facet,
+         width = 7.5, height = 3.5)
+```
+
+Partial complementation of Gat201 mRNA expression shown by RT-qPCR of GAT201, GAT204, and LIV3 genes compared to 3 reference genes (ACT1, GPD1, SRP14).
+There is about 10% of the mRNA abundance of GAT201 in the complemented strains, under these conditions.
+
+
+# Display session info with package versions
+
+To aid reproducibility and troubleshooting.
+
+```{r sessionInfo}
+sessionInfo()
+```
+
+
+
+
+
