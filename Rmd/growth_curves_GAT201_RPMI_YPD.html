@@ -415,65 +415,6 @@ reproducibility</a></li>
 </ul>
 </div>
 
-<pre class="r"><code>scale_time_hrs &lt;- function(name = &quot;Time (hours)&quot;, 
-                           breaks = c(0, 12, 24, 48, 72),
-                           limits = c(0, 72),
-                           expand = c(0, 0),
-                           ...) {
-  # time in hours with defaults for plate reader growth curves
-  scale_x_continuous(name = name, 
-                     breaks = breaks,
-                     limits = limits,
-                     expand = expand,
-                     ...)
-}
-
-scale_color_strain &lt;- function(strain_df, ...) {
-  scale_color_manual(name = &quot;Strain&quot;,
-                     breaks = strain_df$Strain_nice,
-                     values = strain_df$colour,
-                     ...)
-}
-
-ggplot_growthcurve &lt;- 
-  function(data_od,
-           value_od = &quot;OD595&quot;,
-           limits_time = c(0, 72), 
-           limits_od = c(0, 0.1),
-           breaks_od = c(0, 0.05, 0.1)) {
-    # basic plot defaults for growth curve 
-    # e.g. 
-    ggplot(data = data_od, 
-           aes(x = Time, 
-               y = .data[[value_od]])) + 
-      scale_time_hrs(limits = limits_time) + 
-      scale_y_continuous(name = &quot;OD595&quot;,
-                         limits = limits_od,
-                         expand = c(0, 0),
-                         breaks = breaks_od)
-  }
-
-ggplot_growthcurve_summary &lt;- function(...) {
-  ggplot_growthcurve(...) + 
-  geom_line(aes(group = Well, color = Strain_nice), 
-            size = 0.2, alpha = 0.2) + 
-  stat_summary(aes(color = Strain_nice), 
-               fun = &quot;median&quot;, geom = &quot;line&quot;, linewidth = 1)
-}
-
-ggplot_growthcurve_spline &lt;- function(...) {
-  ggplot_growthcurve(...) + 
-  ggformula::stat_spline(aes(color = Strain_nice),
-                         linewidth = 1) 
-}
-
-ggplot_growthcurve_spline_pluswells &lt;- function(...) {
-  ggplot_growthcurve(...) + 
-  geom_line(aes(group = Well, color = Strain_nice), 
-            size = 0.2, alpha = 0.2) + 
-  ggformula::stat_spline(aes(color = Strain_nice),
-                         linewidth = 1) 
-}</code></pre>
 <div id="summary" class="section level1">
 <h1>Summary</h1>
 <p>Plate reader growth curves of GAT201 mutants</p>
@@ -508,7 +449,7 @@ rpm ON.</li>
 <h2>Read in the Plate map data from csv file RPMI</h2>
 <p>Also combine with nice strain names for display.</p>
 <pre class="r"><code>platemap_RPMI &lt;- 
-  here::here(&quot;data&quot;, &quot;20200728_EH_PR2_SetupCSV.csv&quot;) %&gt;%
+  here::here(&quot;data&quot;, &quot;20200728_EH_PR2_RPMI_Setup.csv&quot;) %&gt;%
   read_platemap_csv(strain_df = strain_df) 
 
 head(platemap_RPMI, n=10)</code></pre>
@@ -557,8 +498,10 @@ blank_od_summary_RPMI &lt;-
                      Well != &quot;H2&quot;) 
 
 print(blank_od_summary_RPMI)</code></pre>
-<pre><code>##   OD_median   OD_mean OD_max OD_min
-## 1    0.1488 0.1471181 0.1592 0.1004</code></pre>
+<pre><code>## # A tibble: 1 × 4
+##   OD_median OD_mean OD_max OD_min
+##       &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1     0.149   0.147  0.159  0.100</code></pre>
 <pre class="r"><code>blank_od_time_RPMI &lt;- 
   summarise_od_bytime(annotated_od_RPMI, od.name = &quot;OD595&quot;,
                      is.na(Strain),
@@ -633,7 +576,7 @@ RPMI_spline_plot</code></pre>
 <h2>Read in the Plate map data from csv file YPD</h2>
 <p>Also combine with nice strain names for display.</p>
 <pre class="r"><code>platemap_YPD &lt;- 
-  here::here(&quot;data&quot;, &quot;20200807_EH_PR4_SetupCSV.csv&quot;) %&gt;%
+  here::here(&quot;data&quot;, &quot;20200807_EH_PR4_YPD_Setup.csv&quot;) %&gt;%
   read_platemap_csv(strain_df = strain_df) 
 
 head(platemap_YPD, n=10)</code></pre>
@@ -678,8 +621,10 @@ blank_od_summary_YPD &lt;-
                      is.na(Strain)) 
 
 print(blank_od_summary_YPD)</code></pre>
-<pre><code>##   OD_median  OD_mean OD_max OD_min
-## 1    0.1721 0.172279 0.1875 0.1625</code></pre>
+<pre><code>## # A tibble: 1 × 4
+##   OD_median OD_mean OD_max OD_min
+##       &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1     0.172   0.172  0.188  0.162</code></pre>
 <pre class="r"><code>blank_od_time_YPD &lt;- 
   summarise_od_bytime(annotated_od_YPD, od.name = &quot;OD595&quot;,
                      is.na(Strain)) 

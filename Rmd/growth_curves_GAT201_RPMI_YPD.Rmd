@@ -50,7 +50,7 @@ Also combine with nice strain names for display.
 
 ```{r load_platemap_RPMI}
 platemap_RPMI <- 
-  here::here("data", "20200728_EH_PR2_SetupCSV.csv") %>%
+  here::here("data", "20200728_EH_PR2_RPMI_Setup.csv") %>%
   read_platemap_csv(strain_df = strain_df) 
 
 head(platemap_RPMI, n=10)
@@ -167,7 +167,7 @@ Also combine with nice strain names for display.
 
 ```{r load_platemap_YPD}
 platemap_YPD <- 
-  here::here("data", "20200807_EH_PR4_SetupCSV.csv") %>%
+  here::here("data", "20200807_EH_PR4_YPD_Setup.csv") %>%
   read_platemap_csv(strain_df = strain_df) 
 
 head(platemap_YPD, n=10)

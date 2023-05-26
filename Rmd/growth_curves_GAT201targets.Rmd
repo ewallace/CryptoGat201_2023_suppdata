@@ -129,13 +129,6 @@ plot_plate_1
 ```
 
 
-```{r save_png_summary}
-here::here("results",
-           "20230308_RPMI_Gat201Targets_Plate1_summaryplot.png") %>%
-  ggsave(plot = plot_plate_1,
-         width = 5, height = 3.75)
-```
-
 ## Plot OD corrected by time-based median summary, smoothed
 
 ```{r plot_all_stat_spline, fig.width = 5, fig.height = 3.75}
