@@ -116,3 +116,11 @@ ggsave("../Results/cfu_mean_plot_all_RRS.svg",
 ```
 
 
+# Display session info with package versions
+
+To aid reproducibility and troubleshooting.
+
+```{r sessionInfo}
+sessionInfo()
+```
+

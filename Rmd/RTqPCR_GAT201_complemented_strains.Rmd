@@ -25,7 +25,11 @@ Cells were washed with RPMI prior to testing the OD and setting up cultures in R
 Cultures were incubated at 37 degrees, 150rpm for 7 hours.
 
 Sample collection: 
-19 ml Samples were collected at 6 hours. Samples were fixed in methanol on dry ice for 3-5 mins. My Cryptococcus RNA extraction protocol was followed to isolate RNA from samples.The samples were NOT lyophilise due to timr constraints.
+19 ml Samples were collected at 6 hours. 
+Samples were fixed in methanol on dry ice for 3-5 mins. 
+My Cryptococcus RNA extraction protocol was followed to isolate RNA from samples.
+In summary, methanol-fixed cell pellets were vortexed with zirconium beads and TRI reagent, followed by bead-beating in a Precellys machine, then RNA extracted with the Qiagen Plant and Fungal RNA Extraction Kit.
+(Note that the samples were not lyophilised prior to vortexing due to time constraints.)
 
 Replicates:
 - 3 biological replicates were collected for each strain
