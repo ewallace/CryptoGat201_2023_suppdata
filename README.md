@@ -1,10 +1,15 @@
 # CryptoGat201_2023_suppdata
 
-Supplementary data for forthcoming paper on Cryptococcus neoformans Gat201, May 2023.
+This repository is supplementary data accompanying the bioRxiv preprint:
+
+> A trade-off between proliferation and defense in the fungal pathogen Cryptococcus at alkaline pH is controlled by the transcription factor GAT201
+> Elizabeth S. Hughes, Zhenzhen He, Elizabeth R. Ballou, Edward W.J. Wallace.
+
+_doi and link to follow._
 
 Data Analysis by Edward Wallace `Edward.Wallace@ed.ac.uk` and Liz Hughes `liz.hughes@ed.ac.uk`.
 
-This repository holds all supplementary data and analysis for the paper, except for RNA-seq.
+This repository holds all supplementary data and analysis for the paper, except for RNA-seq and homology analysis.
 RNA-seq data analysis is in separate repositories.
 
 - [x] Budding index quantification of GAT201 mutants
