@@ -11,9 +11,18 @@ output:
 
 ## Summary 
 
-This plots the budding index (% of cells with buds) for cells with and without Gat201, in Cryptococcus wakeup conditions.
+This plots the budding index (% of cells with buds) for Cryptococcus cells with and without Gat201, in  wakeup conditions.
 
-Data were collected by Liz Ballou in 2023 (add details here).
+Data were collected by Liz Ballou in 2023.
+
+In brief, $10^6$ stationary phase cells were resuspended in the appropriate pre-warmed medium as indicated to a final volume of 10 ml each.
+Cells were incubated in the indicated condition for 120 minutes, and then the entire pellet was collected and fixed with 4% methanol free formaldehyde (Pierce) for 10 minutes, then washed 3x with PBS.
+India ink (Remel) slides were prepared and cells were imaged using an inverted Zeiss AxioObserver Z1 with a Plan-Neofluor 40X/1.3 numerical aperture (NA) oil immersion lens objective (Carl Zeiss) and a 16-bit CoolSNAP H2 charge-coupled-device (CCD) camera (Photometrics).
+
+For each figure, three biological replicates were initiated using independent stationary cultures and collected serially on the same day.
+The entire experiment was performed independently two times.
+Cells were counted by eye, each assigned as budded or unbudded.
+
 
 ### Load shared functions and formatting
 
