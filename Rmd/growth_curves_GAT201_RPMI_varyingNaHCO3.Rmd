@@ -1,0 +1,204 @@
+---
+title: "Plate reader growth curves of GAT201 mutants in RPMI media varying NaHCO3"
+author: "Liz Hughes & Edward Wallace"
+date: "19/02/2024"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Summary
+
+This experiments tests the effect of sodium bicarbonate (NaHCO3) on growth of Cryptococcus neoformans.
+
+Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant Madhani in RPMI media with no phenol red, and varying NaHCO3 concentrations.
+
+- 3 Bioreps (1 per plate), 3 Techreps each.
+- Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
+- Seed at OD 600nm = 0.2 , 200 ul per well.
+- Run for 1 day / 24 hours at 37C
+- With 4 concentrations of NaHCO3: 0mM, 1.5mM, 6mM, 24mM
+
+Data in files, one per biological replicate plate:
+
+- `20240112_SubGoal4_BR1_repeat.xlsx`
+- `20240112_SubGoal4_BR2_repeat.xlsx`
+- `20240112_SG4_BR3.xlsx`
+
+# Set up data frame of nice strain names, colours, styles.
+
+
+```{r strain_df}
+strain_df <- tibble( Strain      = c("WT", "Gat201 del", "C26", "C30" ),
+                     Strain_nice = c("GAT201", "gat201∆m", "GAT201-C1", "GAT201-C2"),
+                     colour      = c("grey20", "darkred", "blue3", "cyan4"))
+
+scale_color_strain <- 
+  scale_color_manual("Strain",
+                     breaks = strain_df$Strain_nice,
+                     values = strain_df$colour)
+```
+
+```{r media_df}
+media_df <- tibble( Media      = c("RPMI-N", "RPMI-1.5mM", "RPMI-6mM", "RPMI-24mM" ),
+                    NaHCO3_mM   = c(0, 1.5, 6, 24),
+                    NaHCO3_mMfac = as_factor(NaHCO3_mM))
+```
+
+
+# RPMI media analysis, biological replicate 1
+
+## Read in raw data
+
+```{r load_raw_od}
+raw_od <- 
+  here::here("data", "20240112_SubGoal4_BR1_repeat.xlsx") %>%
+  read_platereader_xlsx(start_row = 52)
+```
+
+## Read in the Plate map data from csv file RPMI
+
+Also combine with nice strain names for display.
+
+TO DO: nice media info as well
+
+```{r load_platemap}
+platemap <- 
+  here::here("data", "20240116_SG4_Plate-Setup.csv") %>%
+  read_platemap_csv(strain_df = strain_df) 
+
+head(platemap, n=10)
+
+```
+
+## Reshape data and combine with the plate map, pairing them by Well
+
+
+```{r reshape_annotate}
+annotated_od <- 
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+
+```
+
+
+## Plot blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od, is.na(Strain)),
+       aes(x=Time, y=OD595,  group = Well, colour = Media)) + 
+  geom_line() + 
+  scale_time_hrs() + 
+  scale_y_continuous(limits = c(0, 0.3),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  labs(title = "Blank wells", x="Time (hours)", y="raw OD595")
+```
+
+This shows that...
+
+
+## Calculate median OD for blank wells
+
+
+```{r calc_blank_medians}
+# filter out columns 1 and 12 as well?
+blank_od_summary <- 
+  annotated_od %>%
+  dplyr::group_by(Media) %>%
+  summarise_od_fixed(od.name = "OD595",
+                     is.na(Strain)) 
+
+print(blank_od_summary)
+
+blank_od_time <- 
+  annotated_od %>%
+  dplyr::group_by(Media) %>%
+  summarise_od_bytime(od.name = "OD595",
+                     is.na(Strain),
+                     Well != "H2") 
+
+print(blank_od_time)
+```
+
+## Subtract blank OD to make corrected OD RPMI
+
+First check and filter out wells with weird traces...
+
+```{r subtract_blank_OD_RPMI}
+bad_blank_wells <- annotated_od %>%
+  dplyr::filter(OD595 > 0.18, is.na(Strain)) %>%
+  dplyr::pull(Well) %>%
+  unique()
+  
+bad_blank_wells
+
+normalised_od <- 
+  annotated_od %>%
+  dplyr::filter(!(Well %in% bad_blank_wells)) %>%
+  normalise_od_2ways(is.na(Strain))
+```
+
+## Plot OD corrected by time-based median summary RPMI
+
+```{r plot_all_stat_summary, fig.width = 5, fig.height = 4}
+RPMI_plot <- 
+  ggplot_growthcurve_summary(data_od = normalised_od %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_time",
+                             limits_time = c(0,72),
+                             limits_od = c(0, 0.1),
+                             breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)
+
+RPMI_plot
+```
+
+
+## Plot OD corrected by time-based median summary RPMI
+
+```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
+RPMI_spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalised_od %>%
+                              filter(!is.na(Strain)),
+                            value_od = "OD_corrected_time",
+                            limits_time = c(0,72),
+                            limits_od = c(0, 0.1),
+                            breaks_od = c(0, 0.05, 0.1)) +
+  scale_color_strain(strain_df)
+
+RPMI_spline_plot
+```
+
+
+
+
+# Session info for reproducibility
+
+```{r session_info}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

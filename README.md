@@ -69,6 +69,13 @@ Contents here listed by the .Rmd analysis script that uses them.
 - 20230321_RPMI_Gat201Targets_Plate3_setup.csv
 - 20230321_RPMI_Gat201Targets_Plate3.xlsx
 
+### growth_curves_GAT201_RPMI_varyingNaHCO3.Rmd
+
+- 20240112_SubGoal4_BR1_repeat.xlsx
+- 20240112_SubGoal4_BR2_repeat.xlsx
+- 20240112_SG4_BR3.xlsx
+- 20240116_SG4_Plate-Setup.csv
+
 ### RTqPCR_GAT201_complemented_strains.Rmd
 
 - 20221014_ComplementCheck_EH_Ct.txt
@@ -106,6 +113,11 @@ Contents here listed by the .Rmd analysis script that produces them.
 - fig_growthcurves_Gat201Targets_RPMI_summary.png
 - 20230308_RPMI_Gat201Targets_Plate1_splineplot.png
 - 20230308_RPMI_Gat201Targets_Plate1_splineplot.svg
+
+
+### growth_curves_GAT201_RPMI_varyingNaHCO3.Rmd
+
+- TO ADD
 
 ### RTqPCR_GAT201_complemented_strains.Rmd
 
