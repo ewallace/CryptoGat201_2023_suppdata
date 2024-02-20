@@ -2,10 +2,10 @@
 
 This repository is supplementary data accompanying the bioRxiv preprint:
 
-> A trade-off between proliferation and defense in the fungal pathogen Cryptococcus at alkaline pH is controlled by the transcription factor GAT201
-> Elizabeth S. Hughes, Zhenzhen He, Elizabeth R. Ballou, Edward W.J. Wallace.
-
-_doi and link to follow._
+> A trade-off between proliferation and defense in the fungal pathogen Cryptococcus at alkaline pH is controlled by the transcription factor GAT201.
+> Elizabeth S. Hughes, Zhenzhen He, Laura R. Tuck, Elizabeth R. Ballou, Edward W.J. Wallace.
+> bioRxiv preprint, 2023
+> https://doi.org/10.1101/2023.06.14.543486
 
 Data Analysis by Edward Wallace `Edward.Wallace@ed.ac.uk` and Liz Hughes `liz.hughes@ed.ac.uk`.
 
@@ -31,6 +31,7 @@ Data analysis scripts, in R markdown format.
 - growth_curves_GAT201_RPMI_YPD.Rmd - makes Figure 2C
 - growth_curves_GAT201_RPMIvCO2Indep.Rmd - makes Figure S5
 - growth_curves_GAT201targets.Rmd - makes Figure 4E, Figure S11
+- growth_curves_GAT201_RPMI_varyingNaHCO3.Rmd - makes Figure
 - RTqPCR_GAT201_complemented_strains.Rmd - makes Figure S6
 - shared_functions_formatting.Rmd - shared packages, functions, and figure formatting that is called in all other data analysis scripts.
 
