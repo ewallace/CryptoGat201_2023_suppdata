@@ -40,10 +40,8 @@ strain_df <- tibble( Strain      = c("KN99-1", "KN99-2", "Gat201(M)", "C1", "C2"
 
 ```{r media_df}
 media_df <- tibble( Medium      = as_factor(c("RPMI-N", "RPMI-1.5mM", "RPMI-6mM", "RPMI-24mM" )),
-                    NaHCO3_mM   = c(0, 1.5, 6, 24))
-
-# print nice labels with "0 mM" etc.
-labeller_mM <- as_labeller(function(mM) { paste0(mM, "mM") } )
+                    NaHCO3_mM   = c(0, 1.5, 6, 24),
+                    NaHCO3_mMfac   = c(0, 1.5, 6, 24) %>% paste0("mM") %>% as_factor())
 ```
 
 ## Read in the Plate map data from csv file RPMI
@@ -62,12 +60,12 @@ head(platemap, n=10)
 
 ```
 
-# RPMI media analysis, biological replicate 1
+# Analysis, biological replicate 1
 
 ## Read in raw data
 
 ```{r load_raw_od}
-raw_od <- 
+raw_od_BR1 <- 
   here::here("data", "20240112_SubGoal4_BR1_repeat.xlsx") %>%
   read_platereader_xlsx(start_row = 52) %>%
   filter(!is.na(Time))
@@ -78,9 +76,9 @@ raw_od <-
 ## Reshape data and combine with the plate map, pairing them by Well
 
 
-```{r reshape_annotate}
-annotated_od <- 
-  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+```{r reshape_annotate_BR1}
+annotated_od_BR1 <- 
+  reshape_annotate_raw_od(raw_od = raw_od_BR1, platemap = platemap)
 
 ```
 
@@ -89,8 +87,8 @@ annotated_od <-
 
 To find how stable the ODs of the blank wells are.
 
-```{r plot_blank_ODs, fig.width = 5.5, fig.height = 4}
-ggplot(data=filter(annotated_od, is.na(Strain)),
+```{r plot_blank_ODs_BR1, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od_BR1, is.na(Strain)),
        aes(x=Time, y=OD595,  group = Well, colour = Medium)) + 
   geom_line() + 
   scale_time_hrs(limits = c(0,24)) + 
@@ -106,10 +104,9 @@ This shows that OD of blank wells is stable.
 ## Calculate median OD for blank wells
 
 
-```{r calc_blank_medians}
-# filter out columns 1 and 12 as well?
+```{r calc_blank_medians_BR1}
 blank_od_summary <- 
-  annotated_od %>%
+  annotated_od_BR1 %>%
   dplyr::group_by(Medium) %>%
   summarise_od_fixed(od.name = "OD595",
                      is.na(Strain)) 
@@ -117,7 +114,7 @@ blank_od_summary <-
 print(blank_od_summary)
 
 blank_od_time <- 
-  annotated_od %>%
+  annotated_od_BR1 %>%
   dplyr::group_by(Medium) %>%
   summarise_od_bytime(od.name = "OD595",
                      is.na(Strain),
@@ -126,29 +123,19 @@ blank_od_time <-
 print(blank_od_time)
 ```
 
-## Subtract blank OD to make corrected OD RPMI
+## Subtract blank OD to make corrected OD
 
-First check and filter out wells with weird traces...
-
-```{r subtract_blank_OD_RPMI}
-bad_blank_wells <- annotated_od %>%
-  dplyr::filter(OD595 > 0.18, is.na(Strain)) %>%
-  dplyr::pull(Well) %>%
-  unique()
-  
-bad_blank_wells
-
-normalised_od <- 
-  annotated_od %>%
-  dplyr::filter(!(Well %in% bad_blank_wells)) %>%
+```{r subtract_blank_OD_BR1}
+normalised_od_BR1 <- 
+  annotated_od_BR1 %>%
   normalise_od_2ways(is.na(Strain))
 ```
 
 ## Plot OD corrected
 
-```{r plot_all_stat_summary, fig.width = 5, fig.height = 5}
-RPMI_plot <- 
-  ggplot_growthcurve_summary(data_od = normalised_od %>%
+```{r plot_all_stat_summary_BR1, fig.width = 5, fig.height = 5}
+plot_BR1 <- 
+  ggplot_growthcurve_summary(data_od = normalised_od_BR1 %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_fixed",
                              limits_time = c(0,24),
@@ -156,20 +143,19 @@ RPMI_plot <-
                              breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
   scale_color_strain(strain_df) +
   expand_limits(y = c(0, 0.1)) +
-  facet_rep_grid(NaHCO3_mM ~., 
-                 labeller = labeller_mM, 
+  facet_rep_grid(NaHCO3_mMfac ~., 
                  scales = "free_y", 
                  space = "free_y")
 
-RPMI_plot
+plot_BR1
 ```
 
 
-## Plot OD corrected by time-based median summary RPMI
+## Plot OD corrected, with smoothing spline
 
-```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 5}
-RPMI_spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalised_od %>%
+```{r plot_all_stat_spline_BR1, fig.width = 5, fig.height = 5}
+spline_plot_BR1 <- 
+  ggplot_growthcurve_spline(data_od = normalised_od_BR1 %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_fixed",
                              limits_time = c(0,24),
@@ -177,19 +163,170 @@ RPMI_spline_plot <-
                              breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
   scale_color_strain(strain_df) +
   expand_limits(y = c(0, 0.1)) +
-  facet_rep_grid(NaHCO3_mM ~., 
-                 labeller = labeller_mM, 
+  facet_rep_grid(NaHCO3_mMfac ~., 
                  scales = "free_y", 
                  space = "free_y")
 
-RPMI_spline_plot
-```
-```{r}
-ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_BioRep1.png"), 
-       plot = RPMI_spline_plot, height = 5, width = 5)
+spline_plot_BR1
 ```
 
 
+# Biological Replicate 2
+
+## Read in raw data, reshape, annotate, normalise 
+
+```{r load_raw_od_BR2}
+raw_od_BR2 <- 
+  here::here("data", "20240112_SubGoal4_BR2_repeat.xlsx") %>%
+  read_platereader_xlsx(start_row = 52) %>%
+  filter(!is.na(Time))
+
+annotated_od_BR2 <- 
+  reshape_annotate_raw_od(raw_od = raw_od_BR2, platemap = platemap)
+
+normalised_od_BR2 <- 
+  annotated_od_BR2 %>%
+  normalise_od_2ways(is.na(Strain))
+```
+
+
+## Check blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs_BR2, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od_BR2, is.na(Strain)),
+       aes(x=Time, y=OD595,  group = Well, colour = Medium)) + 
+  geom_line() + 
+  scale_time_hrs(limits = c(0,24)) + 
+  scale_y_continuous(limits = c(0, 0.2),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  labs(title = "Blank wells", x="Time (hours)", y="raw OD595")
+```
+
+This shows that OD of blank wells is stable.
+
+## Plot OD corrected, with smoothing spline
+
+```{r plot_all_stat_spline_BR2, fig.width = 5, fig.height = 5}
+spline_plot_BR2 <- 
+  ggplot_growthcurve_spline(data_od = normalised_od_BR2 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_fixed",
+                             limits_time = c(0,24),
+                             limits_od = NULL,
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_color_strain(strain_df) +
+  expand_limits(y = c(0, 0.1)) +
+  facet_rep_grid(NaHCO3_mMfac ~.,
+                 scales = "free_y", 
+                 space = "free_y")
+
+spline_plot_BR2
+```
+
+# Biological Replicate 3
+
+## Read in raw data, reshape, annotate, normalise 
+
+```{r load_raw_od_BR3}
+raw_od_BR3 <- 
+  here::here("data", "20240112_SG4_BR3.xlsx") %>%
+  read_platereader_xlsx(start_row = 56) %>%
+  filter(!is.na(Time))
+
+annotated_od_BR3 <- 
+  reshape_annotate_raw_od(raw_od = raw_od_BR3, platemap = platemap)
+
+normalised_od_BR3 <- 
+  annotated_od_BR3 %>%
+  normalise_od_2ways(is.na(Strain))
+```
+
+
+## Check blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs_BR3, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od_BR3, is.na(Strain)),
+       aes(x=Time, y=OD595,  group = Well, colour = Medium)) + 
+  geom_line() + 
+  scale_time_hrs(limits = c(0,24)) + 
+  scale_y_continuous(limits = c(0, 0.2),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  labs(title = "Blank wells", x="Time (hours)", y="raw OD595")
+```
+
+This shows that OD of blank wells is mostly stable, except 2 that are behaving badly. Using the median for normalisation means these won't affect the next steps of analysis.
+
+## Plot OD corrected, with smoothing spline
+
+```{r plot_all_stat_spline_BR3, fig.width = 5, fig.height = 5}
+spline_plot_BR3 <- 
+  ggplot_growthcurve_spline(data_od = normalised_od_BR3 %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_fixed",
+                             limits_time = c(0,24),
+                             limits_od = NULL,
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_color_strain(strain_df) +
+  expand_limits(y = c(0, 0.1)) +
+  facet_rep_grid(NaHCO3_mMfac ~., 
+                 scales = "free_y", 
+                 space = "free_y")
+
+spline_plot_BR3
+```
+
+
+```{r save_spline_BioRep3}
+ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_BioRep3.png"), 
+       plot = spline_plot_BR3, height = 5, width = 5)
+```
+
+
+# Plot to show all replicates
+
+## Collect all 3 reps into single data frame
+
+```{r collect_3reps}
+normalised_od_allreps <-
+  bind_rows(normalised_od_BR1 %>% mutate(BioRep = "Biol. Rep. 1"),
+            normalised_od_BR2 %>% mutate(BioRep = "Biol. Rep. 2"),
+            normalised_od_BR3 %>% mutate(BioRep = "Biol. Rep. 3"),
+            )
+
+```
+
+
+
+## Plot OD corrected without smoothing
+
+```{r plot_all_stat_summary_allreps, fig.width = 7, fig.height = 7}
+plot_allreps <- 
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_allreps %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_fixed",
+                             limits_time = c(0,24),
+                             limits_od = NULL,
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_color_strain(strain_df) +
+  expand_limits(y = c(0, 0.1)) +
+  facet_rep_grid(NaHCO3_mMfac ~ BioRep, 
+                 scales = "free_y", 
+                 space = "free_y") +
+  theme(legend.position = "bottom")
+
+plot_allreps
+```
+
+```{r save_plot_allreps}
+ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_allreps.png"), 
+       plot = plot_allreps, height = 7, width = 7)
+```
 
 
 # Session info for reproducibility
