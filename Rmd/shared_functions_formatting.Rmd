@@ -18,6 +18,7 @@ library(readxl)    # read excel files
 library(extrafont) # specify Arial font
 library(here)      # find files with relative paths
 library(ggformula) # smooth plots with stat_spline
+library(lemon)     # figure formatting, repeat axes on facet plots
 ```
 
 ```{r shared_formatting, echo=FALSE}
@@ -195,6 +196,7 @@ ggplot_growthcurve <-
   function(data_od,
            value_od = "OD595",
            limits_time = c(0, 72), 
+           breaks_time = c(0, 12, 24, 48, 72),
            limits_od = c(0, 0.1),
            breaks_od = c(0, 0.05, 0.1)) {
     # basic plot defaults for growth curve 
@@ -202,7 +204,8 @@ ggplot_growthcurve <-
     ggplot(data = data_od, 
            aes(x = Time, 
                y = .data[[value_od]])) + 
-      scale_time_hrs(limits = limits_time) + 
+      scale_time_hrs(limits = limits_time,
+                     breaks = breaks_time) + 
       scale_y_continuous(name = "OD595",
                          limits = limits_od,
                          expand = c(0, 0),
