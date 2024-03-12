@@ -17,12 +17,12 @@ This experiments tests the effect of sodium bicarbonate (NaHCO3) and cAMP on gro
 
 Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant Madhani in RPMI media with no phenol red.
 
-- 2 Bioreps (1 per plate), 3 Techreps each.
+- 2 Bioreps (1 per plate), 3 Techreps each. One condition has has 1 Biorep with 3 Techreps
 - Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
 - Seed at OD 600nm = 0.2 , 200 ul per well.
 - Run for 1 day / 24 hours at 37C
 - With 2 concentrations of NaHCO3: 0mM, 24mM
-- With 2 concentrations of dbcAMP: 0mM (water control), CHECK mM
+- With 2 concentrations of dbcAMP: 0mM (water control), 10 mM; or 10mM sodium butyrate (Nabut) to control for butyrate toxicity as a breakdown product of dbcAMP.
 
 Data in files, one per biological replicate plate:
 
@@ -49,11 +49,9 @@ media_df <- tibble( Medium      = as_factor(c("RPMI-N", "RPMI-24", "RPMI-N+W", "
 
 Also combine with nice strain names for display.
 
-TO DO: nice media info as well
-
 ```{r load_platemap}
 platemap <- 
-  here::here("data", "20240305_cAMP_Plate-Setup.csv") %>%
+  here::here("data", "20240305_cAMP_Plate_Setup.csv") %>%
   read_platemap_csv(strain_df = strain_df) %>%
   left_join(media_df, by = "Medium")
 
@@ -103,7 +101,7 @@ ggplot(data=filter(annotated_od, is.na(Strain)),
   labs(title = "Blank wells", x="Time (hours)", y="raw OD595")
 ```
 
-This shows that OD of blank wells is somewhat messy.
+This shows that OD of blank wells is somewhat messy, but within reasonable bounds.
 
 
 ## Calculate median OD for blank wells
@@ -138,9 +136,8 @@ normalised_od <-
 
 ## Plot OD corrected
 
-This includes as "NA" the media labels RPMI-N+C2 and RPMI-24+W2, which EW is confused about.
 
-```{r plot_all_stat_summary, fig.width = 8, fig.height = 7}
+```{r plot_all_stat_summary, fig.width = 7, fig.height = 6}
 plot <- 
   ggplot_growthcurve_summary(data_od = normalised_od %>%
                                filter(!is.na(Strain)),
@@ -158,15 +155,19 @@ plot <-
 plot
 ```
 
+## Same unsmoothed plot for supplementary figure
+
+Conclude that dbcAMP does not qualitatively affect the phenotype of GAT201 affecting growth in a NaHCO3-dependent way.
+
+Sodium butyrate as additional negative control also does not strongly affect growth.
 
 ## Plot OD corrected, with smoothing spline
 
-This *excludes*the media labels RPMI-N+C2 and RPMI-24+W2, which EW is confused about.
 
-```{r plot_all_stat_spline, fig.width = 6, fig.height = 5}
+```{r plot_all_stat_spline, fig.width = 7, fig.height = 6}
 spline_plot <- 
   ggplot_growthcurve_spline(data_od = normalised_od %>%
-                               filter(!is.na(Strain), !is.na(addition)),
+                               filter(!is.na(Strain)),
                              value_od = "OD_corrected_fixed",
                              limits_time = c(0,24),
                              limits_od = NULL,
@@ -179,6 +180,11 @@ spline_plot <-
                  labeller = label_both)
 
 spline_plot
+```
+
+```{r save_plot_allreps}
+ggsave(filename = here::here("results", "fig_growthcurves_NaHCO3_vs_cAMP.png"), 
+       plot = plot, height = 7, width = 6)
 ```
 
 
