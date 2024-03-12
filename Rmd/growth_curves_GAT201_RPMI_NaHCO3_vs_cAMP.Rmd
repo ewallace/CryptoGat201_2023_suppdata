@@ -1,0 +1,209 @@
+---
+title: "Plate reader growth curves of GAT201 mutants in RPMI media combining NaHCO3 and cAMP"
+author: "Liz Hughes & Edward Wallace"
+date: "05/03/2024"
+output:
+  html_document:
+    toc: yes
+    toc_depth: 2
+---
+
+```{r call_shared_functions_formatting, child = "shared_functions_formatting.Rmd"}
+```
+
+# Summary
+
+This experiments tests the effect of sodium bicarbonate (NaHCO3) and cAMP on growth of Cryptococcus neoformans.
+
+Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant Madhani in RPMI media with no phenol red.
+
+- 2 Bioreps (1 per plate), 3 Techreps each.
+- Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
+- Seed at OD 600nm = 0.2 , 200 ul per well.
+- Run for 1 day / 24 hours at 37C
+- With 2 concentrations of NaHCO3: 0mM, 24mM
+- With 2 concentrations of dbcAMP: 0mM (water control), CHECK mM
+
+Data in files, one per biological replicate plate:
+
+- `20240305_cAMP_Assay_TRSP.csv`
+
+# Set up data frame of nice strain names, colours, styles.
+
+
+```{r strain_df}
+strain_df <- tibble( Strain      = c("KN99-1", "KN99-2", "Gat201(M)", "Gat201(M)-2"),
+                     Strain_nice = c("GAT201", "GAT201", "gat201∆m", "gat201∆m"),
+                     colour      = c("grey20", "grey20", "darkred", "darkred"))
+```
+
+```{r media_df}
+media_df <- tibble( Medium      = as_factor(c("RPMI-N", "RPMI-24", "RPMI-N+W", "RPMI-24+W", "RPMI-N+C", "RPMI-24+C", "RPMI-N+SB", "RPMI-24+SB" )),
+                    NaHCO3      = as_factor(c("−", "+", "−", "+", "−", "+", "−", "+" )),
+                    cAMP      = as_factor(c("−", "−", "−", "−", "+", "+", "SB", "SB" )),
+                    addition      = as_factor(c("H2O", "H2O", "H2O", "H2O", "dbcAMP", "dbcAMP", "Nabut", "Nabut" ))
+                    )
+```
+
+## Read in the Plate map data from csv file RPMI
+
+Also combine with nice strain names for display.
+
+TO DO: nice media info as well
+
+```{r load_platemap}
+platemap <- 
+  here::here("data", "20240305_cAMP_Plate-Setup.csv") %>%
+  read_platemap_csv(strain_df = strain_df) %>%
+  left_join(media_df, by = "Medium")
+
+head(platemap, n=10)
+
+```
+
+# Analysis, biological replicate 1
+
+## Read in raw data
+
+```{r load_raw_od}
+# raw_od <-
+#   here::here("data", "20240305_cAMP_Assay.xlsx") %>%
+#   read_xlsx(start_row = 2, end_row = 98) %>%
+#   filter(!is.na(Time))
+
+raw_od <-
+  here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
+  read_platereader_csv()
+```
+
+
+
+## Reshape data and combine with the plate map, pairing them by Well
+
+
+```{r reshape_annotate}
+annotated_od <- 
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+
+```
+
+
+## Plot blank ODs
+
+To find how stable the ODs of the blank wells are.
+
+```{r plot_blank_ODs, fig.width = 5.5, fig.height = 4}
+ggplot(data=filter(annotated_od, is.na(Strain)),
+       aes(x=Time, y=OD595,  group = Well, colour = Medium)) + 
+  geom_line() + 
+  scale_time_hrs(limits = c(0,24)) + 
+  scale_y_continuous(limits = c(0, 0.25),
+                     expand = c(0, 0),
+                     breaks = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  labs(title = "Blank wells", x="Time (hours)", y="raw OD595")
+```
+
+This shows that OD of blank wells is somewhat messy.
+
+
+## Calculate median OD for blank wells
+
+
+```{r calc_blank_medians}
+blank_od_summary <- 
+  annotated_od %>%
+  dplyr::group_by(Medium) %>%
+  summarise_od_fixed(od.name = "OD595",
+                     is.na(Strain)) 
+
+print(blank_od_summary)
+
+blank_od_time <- 
+  annotated_od %>%
+  dplyr::group_by(Medium) %>%
+  summarise_od_bytime(od.name = "OD595",
+                     is.na(Strain),
+                     !is.na(OD595)) 
+
+print(blank_od_time)
+```
+
+## Subtract blank OD to make corrected OD
+
+```{r subtract_blank_OD}
+normalised_od <- 
+  annotated_od %>%
+  normalise_od_2ways(is.na(Strain))
+```
+
+## Plot OD corrected
+
+This includes as "NA" the media labels RPMI-N+C2 and RPMI-24+W2, which EW is confused about.
+
+```{r plot_all_stat_summary, fig.width = 8, fig.height = 7}
+plot <- 
+  ggplot_growthcurve_summary(data_od = normalised_od %>%
+                               filter(!is.na(Strain)),
+                             value_od = "OD_corrected_fixed",
+                             limits_time = c(0,24),
+                             limits_od = NULL,
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_color_strain(strain_df) +
+  expand_limits(y = c(0, 0.12)) +
+  facet_rep_grid(NaHCO3 ~ addition, 
+                 scales = "free_y", 
+                 space = "free_y",
+                 labeller = label_both)
+
+plot
+```
+
+
+## Plot OD corrected, with smoothing spline
+
+This *excludes*the media labels RPMI-N+C2 and RPMI-24+W2, which EW is confused about.
+
+```{r plot_all_stat_spline, fig.width = 6, fig.height = 5}
+spline_plot <- 
+  ggplot_growthcurve_spline(data_od = normalised_od %>%
+                               filter(!is.na(Strain), !is.na(addition)),
+                             value_od = "OD_corrected_fixed",
+                             limits_time = c(0,24),
+                             limits_od = NULL,
+                             breaks_od = c(0, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_color_strain(strain_df) +
+  expand_limits(y = c(0, 0.12)) +
+  facet_rep_grid(NaHCO3 ~ addition, 
+                 scales = "free_y", 
+                 space = "free_y",
+                 labeller = label_both)
+
+spline_plot
+```
+
+
+
+# Session info for reproducibility
+
+```{r session_info}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
