@@ -64,13 +64,13 @@ head(platemap, n=10)
 ## Read in raw data
 
 ```{r load_raw_od}
-# raw_od <-
-#   here::here("data", "20240305_cAMP_Assay.xlsx") %>%
-#   read_platereader_xlsx_magellan()
-# 
 raw_od <-
-  here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
-  read_platereader_csv()
+  here::here("data", "20240305_cAMP_Assay.xlsx") %>%
+  read_platereader_xlsx_magellan()
+
+# raw_od <-
+#   here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
+#   read_platereader_csv()
 ```
 
 
@@ -80,10 +80,21 @@ raw_od <-
 
 ```{r reshape_annotate}
 annotated_od <- 
-  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)
+  reshape_annotate_raw_od(raw_od = raw_od, platemap = platemap)  %>%
+  mutate(Well = factor(Well, levels = well_names_96_rowfirst))
 
 ```
 
+## Plot ODs from all wells
+
+```{r plot_allwells, fig.height = 6, fig.width = 12}
+ggplot(data=annotated_od,
+       aes(x=Time, y=OD595,  group = Well, colour = Strain)) + 
+  geom_line() + 
+  scale_time_hrs(limits = c(0,24)) +
+  scale_color_strain(strain_df) + 
+  facet_wrap(~ Well, ncol = 12) 
+```
 
 ## Plot blank ODs
 

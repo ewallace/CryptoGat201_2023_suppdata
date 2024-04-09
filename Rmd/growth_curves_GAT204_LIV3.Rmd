@@ -55,9 +55,6 @@ raw_od <-
   here::here("data", "20240403_GAT204LIV3.xlsx") %>%
   read_platereader_xlsx_magellan(well_names = well_names_96_colfirst)
 
-# raw_od <-
-#   here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
-#   read_platereader_csv()
 ```
 
 

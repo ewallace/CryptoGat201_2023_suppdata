@@ -438,11 +438,7 @@ head(platemap, n=10)</code></pre>
 <h2>Read in raw data</h2>
 <pre class="r"><code>raw_od &lt;-
   here::here(&quot;data&quot;, &quot;20240403_GAT204LIV3.xlsx&quot;) %&gt;%
-  read_platereader_xlsx_magellan(well_names = well_names_96_colfirst)
-
-# raw_od &lt;-
-#   here::here(&quot;data&quot;, &quot;20240305_cAMP_Assay_TRSP.csv&quot;) %&gt;%
-#   read_platereader_csv()</code></pre>
+  read_platereader_xlsx_magellan(well_names = well_names_96_colfirst)</code></pre>
 </div>
 <div id="reshape-data-and-combine-with-the-plate-map-pairing-them-by-well" class="section level2">
 <h2>Reshape data and combine with the plate map, pairing them by
