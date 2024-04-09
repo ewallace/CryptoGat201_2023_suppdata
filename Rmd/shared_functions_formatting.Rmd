@@ -47,7 +47,7 @@ read_platereader_csv <- function(file, ...) {
 }
 
 read_platereader_xlsx <- function(file, start_row = 52, end_row = start_row + 98) {
-  # read TECAN plate reader data in raw .xlsx format
+  # read TECAN Infinite Pro plate reader data in raw .xlsx format
   # transpose the data into a tidy tibble format
   # convert time to hours, from seconds
   # 
@@ -79,6 +79,59 @@ read_platereader_xlsx <- function(file, start_row = 52, end_row = start_row + 98
     magrittr::set_colnames(platereader_colnames) %>%
     # convert time in seconds to time in hours
     dplyr::mutate(Time = Time/3600)
+}
+
+# well names for 96-well plate
+well_names_96_rowfirst <-
+  tidyr::expand_grid(wellrow = LETTERS[1:8], wellcol = 1:12) %>%
+  tidyr::unite(well, wellrow, wellcol, sep = "") %>%
+  dplyr::pull(well)
+
+well_names_96_colfirst <-
+  tidyr::expand_grid(wellcol = 1:12, wellrow = LETTERS[1:8]) %>%
+  tidyr::unite(well, wellrow, wellcol, sep = "") %>%
+  dplyr::pull(well)
+  
+
+read_platereader_xlsx_magellan <- 
+  function(file, 
+           start_row = 2, 
+           end_row = start_row + 97,
+           well_names = well_names_96_rowfirst) {
+  # read TECAN Sunrise / Magellan plate reader data in raw .xlsx format
+  # transpose the data into a tidy tibble format
+  # 
+  #   start_row: 2 that's true for the experimental design we used here
+  #   end_row: the last row of data, start_row + 98 for 96-well plate
+  #
+  
+  # select column names from column 1 of input data, cleaned up
+  platereader_colnames <- 
+    c("Time", "Temp_C", 
+      well_names)
+  
+  plate_data <- 
+    # read rows of excel file from start_row to end_row
+    readxl::read_excel(path = file, 
+                       range = readxl::cell_rows(start_row:end_row),
+                       col_names = FALSE) %>%
+    # transpose
+    t() %>%
+    # convert to tibble
+    dplyr::as_tibble(.name_repair = "minimal") %>%
+    # set column names as above
+    magrittr::set_colnames(platereader_colnames) %>%
+    # convert time in seconds to time in hours
+    dplyr::mutate(Time = Time %>% 
+                    stringr::str_remove("s") %>%
+                    as.numeric() %>%
+                    magrittr::divide_by(3600),
+                  Temp_C = Temp_C %>% 
+                    stringr::str_remove(" °C") %>%
+                    as.numeric()) %>%
+    dplyr::mutate_at(well_names, as.numeric)
+  
+  plate_data
 }
 
 read_platemap_csv <- function(file, strain_df = NULL, ...) {

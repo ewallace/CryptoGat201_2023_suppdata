@@ -454,9 +454,8 @@ head(platemap, n=10)</code></pre>
 <h2>Read in raw data</h2>
 <pre class="r"><code># raw_od &lt;-
 #   here::here(&quot;data&quot;, &quot;20240305_cAMP_Assay.xlsx&quot;) %&gt;%
-#   read_xlsx(start_row = 2, end_row = 98) %&gt;%
-#   filter(!is.na(Time))
-
+#   read_platereader_xlsx_magellan()
+# 
 raw_od &lt;-
   here::here(&quot;data&quot;, &quot;20240305_cAMP_Assay_TRSP.csv&quot;) %&gt;%
   read_platereader_csv()</code></pre>

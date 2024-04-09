@@ -66,9 +66,8 @@ head(platemap, n=10)
 ```{r load_raw_od}
 # raw_od <-
 #   here::here("data", "20240305_cAMP_Assay.xlsx") %>%
-#   read_xlsx(start_row = 2, end_row = 98) %>%
-#   filter(!is.na(Time))
-
+#   read_platereader_xlsx_magellan()
+# 
 raw_od <-
   here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
   read_platereader_csv()
