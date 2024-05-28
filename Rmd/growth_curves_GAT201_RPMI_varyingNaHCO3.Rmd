@@ -325,7 +325,7 @@ plot_allreps
 
 ```{r save_plot_allreps}
 ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_allreps.png"), 
-       plot = plot_allreps, height = 7, width = 7)
+       plot = plot_allreps, height = 6.5, width = 6.5)
 ```
 
 

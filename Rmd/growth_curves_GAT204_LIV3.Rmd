@@ -153,12 +153,15 @@ Conclude that the phenotype of gat201∆liv3∆ double mutant is no more severe 
 
 ```{r plot_all_stat_spline, fig.width = 7, fig.height = 5}
 spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalised_od %>%
-                               filter(!is.na(Strain)),
-                             value_od = "OD_corrected_time",
-                             limits_time = c(0,24),
-                             limits_od = NULL,
-                             breaks_od = c(0, 0.05, 0.1, 0.15, 0.2)) +
+  ggplot_growthcurve_spline_pluswells(
+    data_od = normalised_od %>%
+      filter(!is.na(Strain)),
+    value_od = "OD_corrected_time",
+    limits_time = c(0,24),
+    limits_od = NULL,
+    breaks_od = c(0, 0.05, 0.1, 0.15, 0.2)
+  ) +
+  
   scale_color_strain(strain_df) +
   expand_limits(y = c(0, 0.2))
 
@@ -167,7 +170,7 @@ spline_plot
 
 ```{r save_plot_allreps}
 ggsave(filename = here::here("results", "fig_growthcurves_GAT204_LIV3.png"), 
-       plot = plot, height = 5, width = 6)
+       plot = spline_plot, height = 3.5, width = 5)
 ```
 
 

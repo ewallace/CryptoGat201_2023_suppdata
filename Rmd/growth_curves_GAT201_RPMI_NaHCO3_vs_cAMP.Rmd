@@ -176,7 +176,7 @@ Sodium butyrate as additional negative control also does not strongly affect gro
 
 ```{r plot_all_stat_spline, fig.width = 7, fig.height = 6}
 spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalised_od %>%
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od %>%
                                filter(!is.na(Strain)),
                              value_od = "OD_corrected_fixed",
                              limits_time = c(0,24),
@@ -194,7 +194,7 @@ spline_plot
 
 ```{r save_plot_allreps}
 ggsave(filename = here::here("results", "fig_growthcurves_NaHCO3_vs_cAMP.png"), 
-       plot = plot, height = 7, width = 6)
+       plot = spline_plot, height = 5, width = 6.5)
 ```
 
 
