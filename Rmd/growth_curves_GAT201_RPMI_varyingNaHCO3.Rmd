@@ -48,8 +48,6 @@ media_df <- tibble( Medium      = as_factor(c("RPMI-N", "RPMI-1.5mM", "RPMI-6mM"
 
 Also combine with nice strain names for display.
 
-TO DO: nice media info as well
-
 ```{r load_platemap}
 platemap <- 
   here::here("data", "20240116_SG4_Plate-Setup.csv") %>%

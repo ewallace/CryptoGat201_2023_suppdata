@@ -446,7 +446,6 @@ rpm ON.</li>
 <div id="read-in-the-plate-map-data-from-csv-file-rpmi" class="section level2">
 <h2>Read in the Plate map data from csv file RPMI</h2>
 <p>Also combine with nice strain names for display.</p>
-<p>TO DO: nice media info as well</p>
 <pre class="r"><code>platemap &lt;- 
   here::here(&quot;data&quot;, &quot;20240116_SG4_Plate-Setup.csv&quot;) %&gt;%
   read_platemap_csv(strain_df = strain_df) %&gt;%

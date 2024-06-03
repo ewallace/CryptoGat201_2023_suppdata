@@ -17,16 +17,16 @@ This experiments tests the effect of sodium bicarbonate (NaHCO3) and cAMP on gro
 
 Plate reader growth curves of  WT KN99-alpha and gat201∆ deletion mutant Madhani in RPMI media with no phenol red.
 
-- 2 Bioreps (1 per plate), 3 Techreps each. One condition has has 1 Biorep with 3 Techreps
+- 2 Bioreps, 3 Techreps each. One control condition has has 1 Biorep with 3 Techreps
 - Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180 rpm ON.
 - Seed at OD 600nm = 0.2 , 200 ul per well.
 - Run for 1 day / 24 hours at 37C
 - With 2 concentrations of NaHCO3: 0mM, 24mM
 - With 2 concentrations of dbcAMP: 0mM (water control), 10 mM; or 10mM sodium butyrate (Nabut) to control for butyrate toxicity as a breakdown product of dbcAMP.
 
-Data in files, one per biological replicate plate:
+Data in file:
 
-- `20240305_cAMP_Assay_TRSP.csv`
+- `20240305_cAMP_Assay.xlsx`
 
 # Set up data frame of nice strain names, colours, styles.
 
@@ -59,7 +59,7 @@ head(platemap, n=10)
 
 ```
 
-# Analysis, biological replicate 1
+# Analysis
 
 ## Read in raw data
 
@@ -68,9 +68,6 @@ raw_od <-
   here::here("data", "20240305_cAMP_Assay.xlsx") %>%
   read_platereader_xlsx_magellan()
 
-# raw_od <-
-#   here::here("data", "20240305_cAMP_Assay_TRSP.csv") %>%
-#   read_platereader_csv()
 ```
 
 

@@ -366,8 +366,7 @@ data frame of nice strain names, colours, styles.</a>
 <li><a href="#read-in-the-plate-map-data-from-csv-file-rpmi" id="toc-read-in-the-plate-map-data-from-csv-file-rpmi">Read in the Plate
 map data from csv file RPMI</a></li>
 </ul></li>
-<li><a href="#analysis-biological-replicate-1" id="toc-analysis-biological-replicate-1">Analysis, biological replicate
-1</a>
+<li><a href="#analysis" id="toc-analysis">Analysis</a>
 <ul>
 <li><a href="#read-in-raw-data" id="toc-read-in-raw-data">Read in raw
 data</a></li>
@@ -399,8 +398,8 @@ cAMP on growth of Cryptococcus neoformans.</p>
 <p>Plate reader growth curves of WT KN99-alpha and gat201∆ deletion
 mutant Madhani in RPMI media with no phenol red.</p>
 <ul>
-<li>2 Bioreps (1 per plate), 3 Techreps each. One condition has has 1
-Biorep with 3 Techreps</li>
+<li>2 Bioreps, 3 Techreps each. One control condition has has 1 Biorep
+with 3 Techreps</li>
 <li>Grow 5ml culture from colony (1 colony = 1 Biorep) in YPD, 30C, 180
 rpm ON.</li>
 <li>Seed at OD 600nm = 0.2 , 200 ul per well.</li>
@@ -410,9 +409,9 @@ rpm ON.</li>
 sodium butyrate (Nabut) to control for butyrate toxicity as a breakdown
 product of dbcAMP.</li>
 </ul>
-<p>Data in files, one per biological replicate plate:</p>
+<p>Data in file:</p>
 <ul>
-<li><code>20240305_cAMP_Assay_TRSP.csv</code></li>
+<li><code>20240305_cAMP_Assay.xlsx</code></li>
 </ul>
 </div>
 <div id="set-up-data-frame-of-nice-strain-names-colours-styles." class="section level1">
@@ -449,17 +448,13 @@ head(platemap, n=10)</code></pre>
 ## 10 A10   &lt;NA&gt;       NA      NA RPMI-N &lt;NA&gt;        &lt;NA&gt;   −      −     H2O</code></pre>
 </div>
 </div>
-<div id="analysis-biological-replicate-1" class="section level1">
-<h1>Analysis, biological replicate 1</h1>
+<div id="analysis" class="section level1">
+<h1>Analysis</h1>
 <div id="read-in-raw-data" class="section level2">
 <h2>Read in raw data</h2>
 <pre class="r"><code>raw_od &lt;-
   here::here(&quot;data&quot;, &quot;20240305_cAMP_Assay.xlsx&quot;) %&gt;%
-  read_platereader_xlsx_magellan()
-
-# raw_od &lt;-
-#   here::here(&quot;data&quot;, &quot;20240305_cAMP_Assay_TRSP.csv&quot;) %&gt;%
-#   read_platereader_csv()</code></pre>
+  read_platereader_xlsx_magellan()</code></pre>
 </div>
 <div id="reshape-data-and-combine-with-the-plate-map-pairing-them-by-well" class="section level2">
 <h2>Reshape data and combine with the plate map, pairing them by
