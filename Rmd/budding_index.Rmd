@@ -13,7 +13,8 @@ output:
 
 This plots the budding index (% of cells with buds) for Cryptococcus cells with and without Gat201, in  wakeup conditions.
 
-Data were collected by Liz Ballou in 2023.
+Data were collected by Liz Ballou, 2022-08-11.
+Additional cell counts added 2024-06.
 
 In brief, $10^6$ stationary phase cells were resuspended in the appropriate pre-warmed medium as indicated to a final volume of 10 ml each.
 Cells were incubated in the indicated condition for 120 minutes, and then the entire pellet was collected and fixed with 4% methanol free formaldehyde (Pierce) for 10 minutes, then washed 3x with PBS.
@@ -23,6 +24,7 @@ For each figure, three biological replicates were initiated using independent st
 The entire experiment was performed independently two times.
 Cells were counted by eye, each assigned as budded or unbudded.
 
+Data from file `20220811_CryptoWakeup_Gat201_budding_quantification.xlsx`.
 
 ### Load shared functions and formatting
 
@@ -57,10 +59,12 @@ Time_Media_Temp_labels <-
 
 ```{r load_data}
 budding_data <- 
-  here::here("data","CryptoWakeup_Gat201_budding_quantification.xlsx") %>%
+  here::here("data","20220811_CryptoWakeup_Gat201_budding_quantification.xlsx") %>%
   readxl::read_excel() %>%
-  dplyr::filter(!is.na("total_cells")) %>%
-  tidyr::separate(condition,into = c("Replicate", "Media", "Temperature", "Time_min"),remove = FALSE) %>%
+  dplyr::filter(!is.na(total_cells)) %>%
+  tidyr::separate(condition,
+                  into = c("Replicate", "Media", "Temperature", "Time_min"),
+                  remove = FALSE) %>%
   dplyr::mutate(Time_Media_Temp = 
                   paste(Time_min, Media, Temperature) %>%
                   factor(levels = Time_Media_Temp_levels,
@@ -97,7 +101,8 @@ budding_index_plot <-
   scale_color_strain +
   scale_y_continuous("% of cells with buds", expand = c(0,0)) +
   coord_cartesian(clip = "off") +
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        panel.border = element_blank())
 
 budding_index_plot
 ```
