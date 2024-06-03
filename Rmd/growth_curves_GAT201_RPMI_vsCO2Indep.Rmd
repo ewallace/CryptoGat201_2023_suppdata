@@ -150,7 +150,7 @@ RPMI_plot
 
 ```{r plot_all_stat_spline_RPMI, fig.width = 5, fig.height = 4}
 RPMI_spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalised_od_RPMI %>%
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_RPMI %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
                             limits_time = c(0,72),
@@ -193,7 +193,7 @@ CO2i_plot
 
 ```{r plot_all_stat_spline_CO2i, fig.width = 5, fig.height = 4}
 CO2i_spline_plot <- 
-  ggplot_growthcurve_spline(data_od = normalised_od_CO2i %>%
+  ggplot_growthcurve_spline_pluswells(data_od = normalised_od_CO2i %>%
                               filter(!is.na(Strain)),
                             value_od = "OD_corrected_time",
                             limits_time = c(0,72),
@@ -208,7 +208,7 @@ CO2i_spline_plot
 
 # Multipanel Figure combining RPMI and CO2i results
 
-```{r multifig, fig.height = 4, fig.width = 3.75}
+```{r multifig, fig.height = 4.5, fig.width = 5}
 multi_plot <- 
   plot_grid(
     RPMI_spline_plot,
@@ -223,7 +223,7 @@ multi_plot
 here::here("results",
            "fig_growthcurves_RPMI_CO2independent.png") %>%
   ggsave(plot = CO2i_spline_plot,
-         width = 3.75, height = 3)
+         width = 5, height = 3.5)
 ```
 
 # Session info for reproducibility
