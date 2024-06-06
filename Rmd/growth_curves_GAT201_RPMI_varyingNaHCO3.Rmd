@@ -283,6 +283,9 @@ spline_plot_BR3
 ```{r save_spline_BioRep3}
 ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_BioRep3.png"), 
        plot = spline_plot_BR3, height = 5, width = 5)
+
+ggsave(filename = here::here("results", "fig_growthcurves_varyingNaHCO3_BioRep3.svg"), 
+       plot = spline_plot_BR3, height = 5, width = 5)
 ```
 
 
