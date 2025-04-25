@@ -1,11 +1,14 @@
+[![DOI](https://zenodo.org/badge/641833640.svg)](https://doi.org/10.5281/zenodo.11506135)
+
 # CryptoGat201_2023_suppdata
 
-This repository is supplementary data accompanying the bioRxiv preprint:
+This repository accompanies the manuscript:
 
-> A trade-off between proliferation and defense in the fungal pathogen Cryptococcus at alkaline pH is controlled by the transcription factor GAT201.
+> The GATA-like transcription factor Gat201 determines alkaline restricted growth in Cryptococcus neoformans.
 > Elizabeth S. Hughes, Laura R. Tuck, Zhenzhen He, Elizabeth R. Ballou, Edward W.J. Wallace.
-> bioRxiv preprint, 2024
-> https://doi.org/10.1101/2023.06.14.543486
+> mSphere (in press), 2025
+
+Previously this was a bioRxiv preprint [doi:10.1101/2023.06.14.543486](https://doi.org/10.1101/2023.06.14.543486)
 
 Data Analysis by Edward Wallace `Edward.Wallace@ed.ac.uk` and Liz Hughes `liz.hughes@ed.ac.uk`.
 
